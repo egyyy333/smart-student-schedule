@@ -1,0 +1,11 @@
+# Treat binary files explicitly as binary to prevent CRLF line ending corruption on Git checkout
+*.jar binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.mp4 binary
+*.mp3 binary
+*.zip binary
+*.apk binary
