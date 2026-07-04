@@ -1,6 +1,0 @@
-{
-  "name": "المواعيد",
-  "description": "تطبيق متكامل لمعلم القرآن الكريم لتنظيم مواعيد المجموعات وحسابات الطلاب وإدارة كلمات السر بواسطة الشيخ أحمد النمس",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}
