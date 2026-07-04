@@ -45,6 +45,8 @@ jobs:
       - name: Build Android App 🤖
         run: |
           cd android
+          # Download a clean, official gradle-wrapper.jar directly to prevent any git text-mode corruption
+          curl -sSLo gradle/wrapper/gradle-wrapper.jar https://raw.githubusercontent.com/gradle/gradle/v8.14.3/gradle/wrapper/gradle-wrapper.jar
           chmod +x gradlew
           ./gradlew assembleDebug
 
@@ -65,3 +67,4 @@ jobs:
         with:
           folder: dist
           branch: gh-pages
+          commit-message: "Deploy Smart Student Schedule App [skip ci]"
