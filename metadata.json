@@ -1,0 +1,6 @@
+{
+  "name": "جدول الطالب الذكي",
+  "description": "تطبيق ذكي ومنظم لمساعدة الطلاب في تنظيم وإدارة جداول الحصص المدرسية، الدروس الخصوصية، ومواعيد المذاكرة اليومية والواجبات المنزلية.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
