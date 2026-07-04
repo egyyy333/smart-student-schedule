@@ -22,6 +22,17 @@ export default function Dashboard({ state, onNavigateToTab }: DashboardProps) {
   ];
   const currentArabicDay = JS_DAY_TO_ARABIC[todayIndex];
 
+  // Helper to get current time in 12-hour Arabic format
+  const getFormattedTime12 = () => {
+    const now = new Date();
+    let hours = now.getHours();
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const ampm = hours >= 12 ? 'م' : 'ص';
+    hours = hours % 12;
+    hours = hours ? hours : 12; // conversion of 0 to 12
+    return `${String(hours).padStart(2, '0')}:${minutes} ${ampm}`;
+  };
+
   // Fetch today's items from all 3 schedules
   const schoolToday = state.schoolSchedule.grid[currentArabicDay] || {};
   const tutoringToday = state.tutoringSchedule.grid[currentArabicDay] || {};
@@ -76,9 +87,9 @@ export default function Dashboard({ state, onNavigateToTab }: DashboardProps) {
           </h1>
 
           <div className="text-slate-300 text-sm md:text-base space-y-1 font-medium max-w-2xl leading-relaxed">
-            <p>يا بطل، يومك مرتب ومنظم بذكاء! 🔥</p>
+            <p>يومك مرتب ومنظم بذكاء! 🔥</p>
             <p>
-              اليوم هو <span className="text-white font-bold underline decoration-emerald-400 decoration-2 underline-offset-2">{currentArabicDay}</span>. تصفح مواعيد حصصك ودروسك بذكاء ونفذ خطتك الدراسية.
+              اليوم هو <span className="text-white font-bold underline decoration-emerald-400 decoration-2 underline-offset-2">{currentArabicDay}</span>، الساعة <span className="text-amber-300 font-extrabold">{getFormattedTime12()}</span>. تصفح مواعيد حصصك ودروسك بذكاء ونفذ خطتك الدراسية.
             </p>
           </div>
         </div>
@@ -252,13 +263,6 @@ export default function Dashboard({ state, onNavigateToTab }: DashboardProps) {
           )}
         </div>
 
-      </div>
-
-      {/* Immutable Footer signature */}
-      <div className="pt-6 text-center border-t border-slate-100">
-        <p className="text-[11px] text-slate-400 font-serif">
-          بواسطة الشيخ أحمد النمس غفر الله له
-        </p>
       </div>
 
     </div>

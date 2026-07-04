@@ -222,6 +222,13 @@ export default function App() {
             periodName={activeAlarm.periodName}
             scheduleType={activeAlarm.scheduleType}
             onDismiss={() => setActiveAlarm(null)}
+            onSnooze={() => {
+              const currentAlarm = { ...activeAlarm };
+              setActiveAlarm(null);
+              setTimeout(() => {
+                setActiveAlarm(currentAlarm);
+              }, 600000); // Snooze for 10 minutes
+            }}
           />
         )}
       </AnimatePresence>
@@ -268,42 +275,51 @@ export default function App() {
           </header>
 
           {/* Core Scrollable Panel viewport */}
-          <main className="max-w-7xl mx-auto w-full px-4 py-6 flex-1 mb-20 md:mb-8">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={activeTab}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.2 }}
-              >
-                {activeTab === 'dashboard' && (
-                  <Dashboard 
-                    state={state} 
-                    onNavigateToTab={(tab) => setActiveTab(tab)} 
-                  />
-                )}
-                {activeTab === 'schedules' && (
-                  <SchedulesTab 
-                    state={state} 
-                    onSaveState={handleSaveState} 
-                  />
-                )}
-                {activeTab === 'tasks' && (
-                  <TasksTab 
-                    state={state} 
-                    onSaveState={handleSaveState} 
-                  />
-                )}
-                {activeTab === 'settings' && (
-                  <SettingsTab 
-                    state={state} 
-                    onSaveState={handleSaveState} 
-                    onLockApp={handleLock}
-                  />
-                )}
-              </motion.div>
-            </AnimatePresence>
+          <main className="max-w-7xl mx-auto w-full px-4 py-6 flex-1 mb-20 md:mb-8 flex flex-col justify-between">
+            <div className="flex-1">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeTab}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  {activeTab === 'dashboard' && (
+                    <Dashboard 
+                      state={state} 
+                      onNavigateToTab={(tab) => setActiveTab(tab)} 
+                    />
+                  )}
+                  {activeTab === 'schedules' && (
+                    <SchedulesTab 
+                      state={state} 
+                      onSaveState={handleSaveState} 
+                    />
+                  )}
+                  {activeTab === 'tasks' && (
+                    <TasksTab 
+                      state={state} 
+                      onSaveState={handleSaveState} 
+                    />
+                  )}
+                  {activeTab === 'settings' && (
+                    <SettingsTab 
+                      state={state} 
+                      onSaveState={handleSaveState} 
+                      onLockApp={handleLock}
+                    />
+                  )}
+                </motion.div>
+              </AnimatePresence>
+            </div>
+
+            {/* Centralized Highly Prominent Copyright Footer */}
+            <div className="w-full text-center mt-12 pb-4 border-t border-slate-150/80 flex justify-center items-center select-all">
+              <p className="text-xs md:text-sm font-bold text-slate-700 bg-white border border-slate-200 shadow-xs px-6 py-2.5 rounded-full">
+                بواسطة الشيخ أحمد النمس غفر الله له
+              </p>
+            </div>
           </main>
 
           {/* Bottom/Footer Navigation Menu */}

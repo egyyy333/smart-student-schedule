@@ -8,9 +8,10 @@ interface AlarmOverlayProps {
   periodName: string;
   scheduleType: string; // 'tutoring' | 'study'
   onDismiss: () => void;
+  onSnooze: () => void;
 }
 
-export default function AlarmOverlay({ subjectName, periodName, scheduleType, onDismiss }: AlarmOverlayProps) {
+export default function AlarmOverlay({ subjectName, periodName, scheduleType, onDismiss, onSnooze }: AlarmOverlayProps) {
   useEffect(() => {
     // Start alarm audio on mount
     startAlarmSound();
@@ -26,10 +27,13 @@ export default function AlarmOverlay({ subjectName, periodName, scheduleType, on
     };
   }, []);
 
-  const typeLabel = scheduleType === 'tutoring' ? 'جدول الدروس الخصوصية' : 'جدول المذاكرة والمراجعة';
+  const typeLabel = scheduleType === 'tutoring' ? 'جدول الدروس الخصوصية 📚' : 'جدول المذاكرة والمراجعة ✏️';
+  const typeColorClass = scheduleType === 'tutoring' 
+    ? 'text-emerald-400 bg-emerald-950/80 border-emerald-500/30' 
+    : 'text-amber-400 bg-amber-950/80 border-amber-500/30';
 
   return (
-    <div id="alarm-overlay-container" className="fixed inset-0 bg-slate-950/95 flex flex-col landscape:flex-row justify-between landscape:justify-center items-center z-50 p-6 landscape:p-8 text-white font-sans text-center overflow-y-auto gap-6">
+    <div id="alarm-overlay-container" className="fixed inset-0 bg-slate-950 flex flex-col justify-center items-center z-50 p-6 text-white font-sans text-center overflow-y-auto">
       
       {/* Dynamic particles in background */}
       <div className="absolute inset-0 opacity-10 pointer-events-none overflow-hidden">
@@ -37,11 +41,11 @@ export default function AlarmOverlay({ subjectName, periodName, scheduleType, on
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-sky-500 rounded-full blur-3xl animate-pulse delay-1000" />
       </div>
 
-      <div className="my-auto flex flex-col items-center relative z-10 landscape:max-w-md">
+      <div className="my-auto flex flex-col items-center relative z-10 w-full max-w-md">
         {/* Pulsating Ringing Icon */}
         <motion.div
           animate={{
-            scale: [1, 1.15, 1],
+            scale: [1, 1.12, 1],
             rotate: [-10, 10, -10, 10, 0]
           }}
           transition={{
@@ -49,54 +53,63 @@ export default function AlarmOverlay({ subjectName, periodName, scheduleType, on
             duration: 1.5,
             ease: "easeInOut"
           }}
-          className="w-20 h-20 bg-gradient-to-tr from-emerald-500 to-emerald-700 rounded-full flex items-center justify-center shadow-2xl shadow-emerald-500/50 mb-6 landscape:mb-4"
+          className="w-20 h-20 bg-gradient-to-tr from-emerald-500 to-emerald-700 rounded-full flex items-center justify-center shadow-2xl shadow-emerald-500/50 mb-4"
         >
           <BellRing className="w-10 h-10 text-white animate-bounce" />
         </motion.div>
 
-        {/* Alarm Headers */}
-        <h2 className="text-emerald-400 font-bold tracking-wider text-xs mb-1.5 uppercase">
-          🚨 حان الآن موعد المنبه الذكي
+        {/* Alarm Title */}
+        <h2 className="text-emerald-400 font-black tracking-wider text-xs mb-3 uppercase flex items-center gap-1.5 justify-center">
+          <span>🚨 حان الآن موعد المنبه الذكي</span>
         </h2>
-        <span className="text-[10px] text-slate-400 bg-slate-900 border border-slate-800 px-3 py-0.5 rounded-full mb-4 inline-block">
+
+        {/* Highlighted Category Label (جدول الدروس الخصوصية / جدول المذاكرة والمراجعة) */}
+        <div className={`px-6 py-2.5 rounded-2xl border text-base font-black shadow-lg mb-4 leading-none ${typeColorClass}`}>
           {typeLabel}
-        </span>
+        </div>
 
-        {/* Subject Name / Period Title */}
-        <motion.h1 
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-3xl font-black text-white tracking-tight mb-3 px-4 drop-shadow"
-        >
-          {subjectName || "وقت المذاكرة والتحصيل الدراسي"}
-        </motion.h1>
+        {/* Elegant box containing subject name and hour only */}
+        <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 w-full shadow-2xl flex flex-col items-center justify-center gap-4">
+          <span className="text-[10px] uppercase tracking-widest text-slate-400 font-extrabold">الدرس / المادة</span>
+          <div className="text-2xl md:text-3xl font-black text-white leading-tight">
+            {subjectName || "وقت المذاكرة والتحصيل الدراسي"}
+          </div>
+          
+          <div className="w-2/3 h-px bg-slate-800" />
+          
+          <span className="text-[10px] uppercase tracking-widest text-slate-400 font-extrabold">الساعة والوقت</span>
+          <div className="flex items-center gap-2 text-emerald-400 font-black text-lg bg-slate-950 px-4 py-1.5 rounded-xl border border-slate-900 shadow-inner">
+            <Clock className="w-4 h-4" />
+            <span>{periodName}</span>
+          </div>
+        </div>
 
-        <p className="text-base text-slate-300 font-medium">
-          بناءً على تخطيطك الذكي لـ: <span className="text-emerald-300 font-semibold">{periodName}</span>
-        </p>
+        {/* Control Action Buttons */}
+        <div className="w-full max-w-xs flex flex-col gap-3 mt-6">
+          {/* Stop Button */}
+          <button
+            onClick={onDismiss}
+            className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-extrabold rounded-2xl shadow-lg shadow-emerald-950/40 transition-all text-base cursor-pointer"
+          >
+            إيقاف
+          </button>
+          
+          {/* Snooze Button */}
+          <button
+            onClick={onSnooze}
+            className="w-full py-3.5 bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white font-extrabold rounded-2xl shadow-lg shadow-amber-950/40 transition-all text-base cursor-pointer"
+          >
+            تأجيل (10 دقائق)
+          </button>
+        </div>
 
-        {/* Decorative Quote */}
-        <p className="text-[10px] text-slate-500 mt-4 max-w-xs italic leading-relaxed">
-          "يا بطل، الوقت هو كنزك الأثمن. ركّز الآن وابدأ بكل همّة ونشاط وجدّ!"
-        </p>
-      </div>
-
-      {/* Dismiss Button */}
-      <div className="mb-4 landscape:mb-0 w-full max-w-xs flex flex-col items-center justify-center relative z-10 landscape:my-auto">
-        <button
-          onClick={onDismiss}
-          className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-bold rounded-2xl shadow-xl shadow-emerald-900/40 transition-all flex items-center justify-center gap-3 text-base cursor-pointer"
-        >
-          <Volume2 className="w-5 h-5" />
-          <span>إيقاف المنبه والبدء</span>
-        </button>
-
-        {/* Immutable footnote signature */}
-        <div className="mt-4 text-center">
-          <p className="text-[10px] text-slate-500 font-serif">
+        {/* Highly Visible centered Copyright Badge */}
+        <div className="mt-8 text-center select-all">
+          <p className="text-xs md:text-sm font-bold text-slate-200 bg-slate-900 border border-slate-800/80 px-6 py-2.5 rounded-full shadow-md">
             بواسطة الشيخ أحمد النمس غفر الله له
           </p>
         </div>
+
       </div>
 
     </div>

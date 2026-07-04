@@ -768,7 +768,7 @@ export default function SchedulesTab({ state, onSaveState }: SchedulesTabProps) 
                       setPasscodeError(null);
                       setPasscodeAttempt(e.target.value.replace(/\D/g, ''));
                     }}
-                    className="w-32 mx-auto tracking-[1.5em] text-center p-3 rounded-xl border border-slate-200 text-slate-800 font-mono font-black text-xl bg-slate-50 focus:border-emerald-500 focus:bg-white focus:outline-none transition-all block"
+                    className="w-52 mx-auto tracking-[0.8em] pr-[0.8em] text-center p-3 rounded-xl border border-slate-200 text-slate-800 font-mono font-black text-xl bg-slate-50 focus:border-emerald-500 focus:bg-white focus:outline-none transition-all block"
                     placeholder="••••"
                     autoFocus
                     onKeyDown={(e) => {

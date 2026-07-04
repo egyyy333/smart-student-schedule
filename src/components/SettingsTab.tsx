@@ -212,15 +212,6 @@ export default function SettingsTab({ state, onSaveState, onLockApp }: SettingsT
                   <Check className="w-3.5 h-3.5" />
                   <span>تثبيت</span>
                 </button>
-
-                {/* Speech test refresh button */}
-                <button
-                  onClick={handleTestNameSpeech}
-                  className="w-10 h-10 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl flex items-center justify-center border border-slate-150 transition-colors cursor-pointer"
-                  title="استمع إلى نداء الاسم الترحيبي"
-                >
-                  <RefreshCw className="w-4 h-4" />
-                </button>
               </div>
             </div>
 
