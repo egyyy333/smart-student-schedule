@@ -9,6 +9,7 @@ import TasksTab from './components/TasksTab';
 import SettingsTab from './components/SettingsTab';
 import { GraduationCap, Home, Calendar, CheckSquare, Settings, Lock, Flame } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { syncAndroidAlarms } from './utils/alarmSync';
 
 const STORAGE_KEY = 'smart_student_schedule_state';
 
@@ -33,7 +34,14 @@ export default function App() {
   const handleSaveState = (newState: AppState) => {
     setState(newState);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
+    // Synchronize alarms natively
+    syncAndroidAlarms(newState);
   };
+
+  // Sync alarms on initial mount
+  useEffect(() => {
+    syncAndroidAlarms(state);
+  }, []);
 
   // 2. Lock screen verification state
   const [isUnlocked, setIsUnlocked] = useState<boolean>(false);
@@ -50,8 +58,42 @@ export default function App() {
 
   const [lastFiredAlarm, setLastFiredAlarm] = useState<string>('');
 
+  // 5. JavaScript Native Event Listener for lockscreen alarms
   useEffect(() => {
-    // Daemon checks every 5 seconds to minimize battery usage while staying highly accurate
+    const handleNativeAlarm = (event: any) => {
+      console.log("Custom native alarm event received in React application:", event);
+      
+      const detail = event.detail;
+      let payload = detail;
+      if (typeof detail === 'string') {
+        try {
+          payload = JSON.parse(detail);
+        } catch (e) {
+          console.error("Failed to parse native alarm detail string", e);
+        }
+      } else if (!detail && event.subject) {
+        payload = event;
+      }
+
+      if (payload && payload.subject) {
+        // Automatically bypass keyguard locking state and show the alarm immediately
+        setIsUnlocked(true);
+        setActiveAlarm({
+          subjectName: payload.subject,
+          periodName: payload.time || payload.header || 'المنبه الموقوت',
+          scheduleType: 'tutoring' // Default to tutoring or guess based on header name
+        });
+      }
+    };
+
+    window.addEventListener('alarmTriggered', handleNativeAlarm);
+    return () => {
+      window.removeEventListener('alarmTriggered', handleNativeAlarm);
+    };
+  }, []);
+
+  // Web fallback daemon - checks every 5 seconds for desktop/web simulation
+  useEffect(() => {
     const interval = setInterval(() => {
       const now = new Date();
       const currentDayIdx = now.getDay(); // 0: Sunday, 1: Monday...
@@ -150,7 +192,10 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col justify-between font-sans selection:bg-emerald-200">
+    <div 
+      className="min-h-screen bg-slate-50 flex flex-col justify-between font-sans selection:bg-emerald-200" 
+      dir="rtl"
+    >
       
       {/* 1. Passcode Gate Screen */}
       <AnimatePresence mode="wait">

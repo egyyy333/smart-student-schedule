@@ -392,30 +392,12 @@ export default function SchedulesTab({ state, onSaveState }: SchedulesTabProps) 
       {/* 2. Control Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-4 bg-white border border-slate-100 rounded-2xl p-4 shadow-sm">
         
-        {/* Left Side: Zoom Level and Instructions */}
+        {/* Left Side: Instructions */}
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => handleZoom('out')}
-            className="w-9 h-9 bg-slate-50 hover:bg-slate-100 active:bg-slate-200 text-slate-700 rounded-xl flex items-center justify-center border border-slate-100 transition-colors cursor-pointer"
-            title="تصغير حجم الخط"
-          >
-            <Minimize2 className="w-4 h-4" />
-          </button>
-          <span className="text-xs font-mono font-bold text-slate-500 bg-slate-50 px-2.5 py-1 rounded-md border border-slate-100">
-            {activeLocal.zoomLevel || 100}%
-          </span>
-          <button
-            onClick={() => handleZoom('in')}
-            className="w-9 h-9 bg-slate-50 hover:bg-slate-100 active:bg-slate-200 text-slate-700 rounded-xl flex items-center justify-center border border-slate-100 transition-colors cursor-pointer"
-            title="تكبير حجم الخط"
-          >
-            <Maximize2 className="w-4 h-4" />
-          </button>
-
           {/* Quick Keyboard Instruction Info */}
-          <div className="hidden sm:flex items-center gap-1 text-[11px] text-slate-400 bg-slate-50/50 px-3 py-1.5 rounded-full border border-slate-100">
-            <HelpCircle className="w-3.5 h-3.5 text-slate-400" />
-            <span>استخدم الأسهم 🧭 و Enter للتحرير السريع بالكيبورد</span>
+          <div className="flex items-center gap-1.5 text-xs text-slate-600 bg-slate-50 px-3.5 py-2 rounded-xl border border-slate-100 font-bold">
+            <HelpCircle className="w-4 h-4 text-emerald-600" />
+            <span>استخدم الأسهم 🧭 و Enter للتنقل والتحرير السريع</span>
           </div>
         </div>
 
@@ -428,12 +410,12 @@ export default function SchedulesTab({ state, onSaveState }: SchedulesTabProps) 
               onClick={() => setShowAlarmModal(true)}
               className={`px-4 py-2 rounded-xl flex items-center gap-1.5 text-xs font-extrabold transition-all cursor-pointer ${
                 activeLocal.alarmConfig.enabled 
-                  ? 'bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 shadow-sm shadow-amber-500/5' 
+                  ? 'bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 shadow-sm' 
                   : 'bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200'
               }`}
             >
               <Bell className={`w-4 h-4 ${activeLocal.alarmConfig.enabled ? 'text-amber-500 animate-swing' : ''}`} />
-              <span>إعدادات التنبيه</span>
+              <span>إعدادات التنبيه المالي</span>
             </button>
           )}
 
@@ -443,7 +425,7 @@ export default function SchedulesTab({ state, onSaveState }: SchedulesTabProps) 
             className="px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl flex items-center gap-1.5 text-xs font-extrabold transition-colors cursor-pointer"
           >
             <Sparkles className="w-4 h-4" />
-            <span>تعبئة نموذج افتراضي</span>
+            <span>نموذج تلقائي</span>
           </button>
 
           {/* Clear Grid */}
@@ -459,31 +441,32 @@ export default function SchedulesTab({ state, onSaveState }: SchedulesTabProps) 
 
       </div>
 
-      {/* 3. The Responsive Grid Table */}
-      <div className="bg-white border border-slate-100 rounded-3xl overflow-hidden shadow-sm">
+      {/* 3. The Responsive Grid Table with Sticky Headers and Sticky Day Labels */}
+      <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm relative">
         
-        {/* Horizontal wrapping container to support Landscape beautifully */}
-        <div className="overflow-x-auto w-full">
+        {/* Horizontal and Vertical Scrollable Container */}
+        <div id="schedule-scroll-viewport" className="overflow-auto max-h-[500px] w-full relative">
           <table 
-            className="w-full border-collapse" 
-            style={{ fontSize: `${(activeLocal.zoomLevel || 100) / 100}rem` }}
+            className="w-full border-separate border-spacing-0 text-sm" 
+            dir="rtl"
           >
             {/* Header: Emerald themed */}
             <thead>
               <tr className="bg-emerald-700 text-white">
-                <th className="p-4 text-xs font-extrabold w-[90px] border-l border-emerald-800 text-right font-sans">
-                  اليوم
+                {/* Sticky top-right cell */}
+                <th className="p-4 text-xs font-extrabold border-l border-b border-emerald-800 text-center sticky right-0 top-0 z-30 bg-emerald-700 min-w-[100px] shadow-sm select-none">
+                  اليوم / الوقت
                 </th>
                 {activeLocal.headers.map((header, idx) => (
                   <th 
                     key={idx} 
                     onClick={() => handleOpenEditHeader(idx, header)}
-                    className="p-4 text-xs font-black tracking-wide border-l border-emerald-800 text-center cursor-pointer hover:bg-emerald-800/80 transition-colors select-none group min-w-[130px]"
+                    className="p-4 text-xs font-black tracking-wide border-l border-b border-emerald-800 text-center cursor-pointer hover:bg-emerald-800/80 transition-colors select-none group min-w-[150px] sticky top-0 z-20 bg-emerald-700 shadow-sm"
                     title="انقر لتعديل اسم الفترة/الوقت"
                   >
                     <div className="flex items-center justify-center gap-1.5">
                       <span>{header}</span>
-                      <span className="text-[9px] text-emerald-300 font-bold opacity-0 group-hover:opacity-100 transition-opacity">✏️</span>
+                      <span className="text-[10px] text-emerald-300 font-bold opacity-0 group-hover:opacity-100 transition-opacity">✏️</span>
                     </div>
                   </th>
                 ))}
@@ -493,9 +476,9 @@ export default function SchedulesTab({ state, onSaveState }: SchedulesTabProps) 
             {/* Grid Body */}
             <tbody>
               {DAYS.map((day) => (
-                <tr key={day} className="border-b border-slate-100 hover:bg-slate-50/30">
-                  {/* Day Label column */}
-                  <td className="p-3 text-xs font-extrabold text-slate-700 bg-slate-50/80 border-l border-slate-100 text-right select-none">
+                <tr key={day} className="hover:bg-slate-50/30">
+                  {/* Day Label column: Sticky on the right */}
+                  <td className="p-3 text-xs font-extrabold text-slate-800 bg-slate-100 border-l border-b border-slate-200 text-center sticky right-0 z-10 select-none min-w-[100px] shadow-xs">
                     {day}
                   </td>
                   
@@ -514,7 +497,7 @@ export default function SchedulesTab({ state, onSaveState }: SchedulesTabProps) 
                       >
                         {value ? (
                           <div className="flex flex-col items-center justify-center w-full px-1.5 leading-snug">
-                            <span>{value}</span>
+                            <span className="font-bold">{value}</span>
                             
                             {/* Small clear "X" button on hover */}
                             <button
@@ -526,8 +509,8 @@ export default function SchedulesTab({ state, onSaveState }: SchedulesTabProps) 
                             </button>
                           </div>
                         ) : (
-                          <span className="text-[10px] text-slate-300 font-normal opacity-0 group-hover:opacity-100 transition-opacity select-none">
-                            + إضافة
+                          <span className="text-lg font-bold text-emerald-600/30 group-hover:text-emerald-600 transition-colors select-none">
+                            +
                           </span>
                         )}
                       </td>
