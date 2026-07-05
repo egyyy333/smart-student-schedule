@@ -147,12 +147,19 @@ public class AlarmService extends Service {
 
         // MediaPlayer
         try {
-            Uri alert = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
-            if (alert == null) {
-                alert = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
-            }
+            java.io.File customRingtone = new java.io.File(getFilesDir(), "custom_ringtone.mp3");
             mediaPlayer = new MediaPlayer();
-            mediaPlayer.setDataSource(this, alert);
+            
+            if (customRingtone.exists()) {
+                mediaPlayer.setDataSource(customRingtone.getAbsolutePath());
+            } else {
+                Uri alert = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
+                if (alert == null) {
+                    alert = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
+                }
+                mediaPlayer.setDataSource(this, alert);
+            }
+
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 mediaPlayer.setAudioAttributes(
                     new AudioAttributes.Builder()

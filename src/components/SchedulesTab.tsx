@@ -66,6 +66,39 @@ export default function SchedulesTab({ state, onSaveState }: SchedulesTabProps) 
 
   // Alarms settings modal states
   const [showAlarmModal, setShowAlarmModal] = useState<boolean>(false);
+  const [hasOverlayPermission, setHasOverlayPermission] = useState<boolean>(true);
+
+  useEffect(() => {
+    if (showAlarmModal) {
+      checkNativeOverlayPermission();
+    }
+  }, [showAlarmModal]);
+
+  const checkNativeOverlayPermission = async () => {
+    try {
+      const { AlarmPlugin } = await import('../utils/alarmSync');
+      if (AlarmPlugin && typeof AlarmPlugin.checkOverlayPermission === 'function') {
+        const res = await AlarmPlugin.checkOverlayPermission();
+        setHasOverlayPermission(!!res.hasPermission);
+      }
+    } catch (err) {
+      console.warn("Could not check overlay permission natively:", err);
+    }
+  };
+
+  const handleRequestOverlayPermission = async () => {
+    try {
+      const { AlarmPlugin } = await import('../utils/alarmSync');
+      if (AlarmPlugin && typeof AlarmPlugin.requestOverlayPermission === 'function') {
+        await AlarmPlugin.requestOverlayPermission();
+        // Wait and re-check shortly after returning
+        setTimeout(checkNativeOverlayPermission, 3000);
+      }
+    } catch (err) {
+      console.warn("Could not request overlay permission natively:", err);
+    }
+  };
+
   const [timepickerTarget, setTimepickerTarget] = useState<string | null>(null); // column header
   const [wheelHour, setWheelHour] = useState<number>(4);
   const [wheelMinute, setWheelMinute] = useState<number>(0);
@@ -76,12 +109,29 @@ export default function SchedulesTab({ state, onSaveState }: SchedulesTabProps) 
   const handleCustomRingtoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const base64Data = event.target?.result as string;
+        if (base64Data) {
+          localStorage.setItem('custom_ringtone_base64', base64Data);
+          try {
+            const { AlarmPlugin } = await import('../utils/alarmSync');
+            if (AlarmPlugin && typeof AlarmPlugin.saveCustomRingtone === 'function') {
+              await AlarmPlugin.saveCustomRingtone({ base64Data });
+            }
+          } catch (err) {
+            console.warn("Native saveCustomRingtone not available:", err);
+          }
+        }
+      };
+      reader.readAsDataURL(file);
+
       updateActiveLocal(prev => {
         const copy = { ...prev };
         copy.alarmConfig.ringtoneName = file.name;
         return copy;
       });
-      speakArabicText("تم اختيار نغمة مخصصة بنجاح");
+      speakArabicText("تم اختيار وحفظ نغمة مخصصة بنجاح");
     }
   };
 
@@ -348,7 +398,7 @@ export default function SchedulesTab({ state, onSaveState }: SchedulesTabProps) 
 
   // Render a cell's custom CSS styling depending on schedule type
   const getCellClassName = (hasContent: boolean, isFocused: boolean) => {
-    const base = "p-1 h-16 min-w-[72px] w-[72px] max-w-[72px] border-b border-l border-slate-100 text-center relative group cursor-pointer transition-all text-[10px] font-semibold select-none align-middle ";
+    const base = "p-1 h-12 min-w-[84px] w-[84px] max-w-[84px] border-b border-l border-slate-100 text-center relative group cursor-pointer transition-all text-[10px] font-semibold select-none align-middle ";
     const focusRing = isFocused ? "ring-2 ring-emerald-500 ring-inset bg-emerald-50/50 " : "";
     
     if (activeTab === 'school') {
@@ -465,8 +515,8 @@ export default function SchedulesTab({ state, onSaveState }: SchedulesTabProps) 
       {/* 3. The Responsive Grid Table with Sticky Headers and Sticky Day Labels */}
       <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm relative">
         
-        {/* Horizontal and Vertical Scrollable Container */}
-        <div id="schedule-scroll-viewport" className="overflow-auto max-h-[500px] w-full relative">
+        {/* Horizontal Scrollable Container (Natural Vertical Layout Integration) */}
+        <div id="schedule-scroll-viewport" className="overflow-x-auto overflow-y-visible w-full relative">
           <table 
             className="min-w-max w-full border-separate border-spacing-0 text-sm origin-top-right transition-all duration-150" 
             dir="rtl"
@@ -476,31 +526,31 @@ export default function SchedulesTab({ state, onSaveState }: SchedulesTabProps) 
             <thead>
               <tr className="bg-emerald-700 text-white">
                 {/* Sticky top-right cell */}
-                <th className="p-1 text-[10px] font-black border-l border-b border-emerald-800 text-center sticky right-0 top-0 z-40 bg-emerald-700 min-w-[32px] w-[32px] max-w-[32px] h-18 shadow-sm select-none">
+                <th className="p-1 text-[10px] font-black border-l border-b border-emerald-800 text-center sticky right-0 top-0 z-40 bg-emerald-700 min-w-[60px] w-[60px] max-w-[60px] h-14 shadow-sm select-none">
                   اليوم
                 </th>
                 {activeLocal.headers.map((header, idx) => (
                   <th 
                     key={idx} 
                     onClick={() => handleOpenEditHeader(idx, header)}
-                    className="p-1 text-[9px] font-black tracking-tight border-l border-b border-emerald-800 text-center cursor-pointer hover:bg-emerald-800/80 transition-colors select-none group min-w-[72px] w-[72px] max-w-[72px] h-18 sticky top-0 z-20 bg-emerald-700 shadow-sm"
+                    className="p-1 text-[9px] font-black tracking-tight border-l border-b border-emerald-800 text-center cursor-pointer hover:bg-emerald-800/80 transition-colors select-none group min-w-[84px] w-[84px] max-w-[84px] h-14 sticky top-0 z-20 bg-emerald-700 shadow-sm"
                     title="انقر لتعديل اسم الفترة/الوقت"
                   >
                     <div className="flex flex-col items-center justify-center h-full w-full leading-tight text-center px-0.5 gap-0.5">
-                      <span className="whitespace-pre-line line-clamp-2 font-black text-[8px]">{header}</span>
+                      <span className="whitespace-pre-line line-clamp-2 font-black text-[10px]">{header}</span>
                       <span className="text-[9px] text-emerald-300 font-bold opacity-0 group-hover:opacity-100 transition-opacity">✏️</span>
                     </div>
                   </th>
                 ))}
               </tr>
             </thead>
-
+ 
             {/* Grid Body */}
             <tbody>
               {DAYS.map((day) => (
                 <tr key={day} className="hover:bg-slate-50/30">
                   {/* Day Label column: Sticky on the right */}
-                  <td className="p-1 text-[10px] font-extrabold text-slate-800 bg-slate-100 border-l border-b border-slate-200 text-center sticky right-0 z-10 select-none min-w-[32px] w-[32px] max-w-[32px] h-16 shadow-xs align-middle">
+                  <td className="p-1 text-[10px] font-extrabold text-slate-800 bg-slate-100 border-l border-b border-slate-200 text-center sticky right-0 z-10 select-none min-w-[60px] w-[60px] max-w-[60px] h-12 shadow-xs align-middle">
                     <div className="flex items-center justify-center w-full h-full font-bold leading-tight">
                       {day}
                     </div>
@@ -519,10 +569,10 @@ export default function SchedulesTab({ state, onSaveState }: SchedulesTabProps) 
                         tabIndex={0}
                         className={getCellClassName(!!value, isFocused)}
                       >
-                        <div className="flex flex-col items-center justify-center w-full h-full min-h-[48px] relative">
+                        <div className="flex flex-col items-center justify-center w-full h-full min-h-[32px] relative">
                           {value ? (
                             <div className="flex flex-col items-center justify-center w-full px-1 leading-tight text-center break-words max-h-full overflow-hidden">
-                              <span className="font-extrabold text-[9px] leading-tight line-clamp-2">{value}</span>
+                              <span className="font-extrabold text-[10px] leading-tight line-clamp-2">{value}</span>
                               
                               {/* Small clear "X" button on hover */}
                               <button
@@ -886,12 +936,86 @@ export default function SchedulesTab({ state, onSaveState }: SchedulesTabProps) 
                   </div>
                 </div>
 
+                {/* 1.5. Overlay Permission Request */}
+                <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex flex-col gap-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="space-y-1">
+                      <span className="text-xs font-extrabold text-slate-800 block">صلاحية الظهور فوق التطبيقات وشاشة القفل 🛡️</span>
+                      <span className="text-[10px] text-slate-500 block leading-relaxed">
+                        هذه الصلاحية ضرورية جداً ليتمكن المنبه من إيقاظ الشاشة وعرض صفحة الرنين بالكامل عند قفل الهاتف أو غلق التطبيق.
+                      </span>
+                    </div>
+                    {hasOverlayPermission ? (
+                      <span className="shrink-0 px-2 py-0.5 bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-full text-[9px] font-black leading-none">
+                        مفعّلة ✓
+                      </span>
+                    ) : (
+                      <span className="shrink-0 px-2 py-0.5 bg-rose-100 text-rose-800 border border-rose-200 rounded-full text-[9px] font-black leading-none">
+                        غير مفعّلة !
+                      </span>
+                    )}
+                  </div>
+                  
+                  {!hasOverlayPermission && (
+                    <button
+                      onClick={handleRequestOverlayPermission}
+                      className="w-full py-2 bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white text-xs font-black rounded-xl transition-all shadow-xs cursor-pointer"
+                    >
+                      تفعيل صلاحية الظهور فوق التطبيقات الآن ⚙️
+                    </button>
+                  )}
+                  
+                  <button
+                    onClick={checkNativeOverlayPermission}
+                    className="text-[9px] text-slate-400 hover:text-slate-600 underline text-right font-medium self-end"
+                  >
+                    إعادة التحقق من حالة الصلاحية 🔄
+                  </button>
+                </div>
+
+                {/* 1.8. Test Alarm Trigger */}
+                <div className="p-4 bg-emerald-50/50 border border-emerald-100 rounded-2xl flex items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <span className="text-xs font-extrabold text-emerald-900 block">اختبار وفحص منبه التطبيق 🔔</span>
+                    <span className="text-[10px] text-emerald-700/80 block">
+                      انقر لاختبار ظهور شاشة الرنين وتجربة تشغيل نغمتك المضبوطة للتأكد من تفعيلها بشكل صحيح.
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      // Trigger custom window event which is handled in App.tsx
+                      const testEvent = new CustomEvent("alarmTriggered", {
+                        detail: {
+                          subject: "حصة تجريبية لاختبار المنبه الذكي ⏰",
+                          time: "الوقت الحالي للرنين",
+                          scheduleType: activeTab
+                        }
+                      });
+                      window.dispatchEvent(testEvent);
+                      setShowAlarmModal(false); // Hide settings modal to let them see the full-screen overlay!
+                      speakArabicText("بدء اختبار المنبه التجريبي");
+                    }}
+                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black rounded-xl shadow-md transition-all shrink-0 cursor-pointer"
+                  >
+                    تجربة رنين المنبه
+                  </button>
+                </div>
+
                 {/* 2. Audio Ringtone Selector */}
                 <div className="space-y-2">
                   <h4 className="text-xs font-extrabold text-slate-600">إدارة نغمة الرنين</h4>
                   <div className="grid grid-cols-2 gap-3">
                     <button
-                      onClick={() => {
+                      onClick={async () => {
+                        localStorage.removeItem('custom_ringtone_base64');
+                        try {
+                          const { AlarmPlugin } = await import('../utils/alarmSync');
+                          if (AlarmPlugin && typeof AlarmPlugin.deleteCustomRingtone === 'function') {
+                            await AlarmPlugin.deleteCustomRingtone();
+                          }
+                        } catch (err) {
+                          console.warn("Native deleteCustomRingtone not available:", err);
+                        }
                         updateActiveLocal(prev => {
                           const copy = { ...prev };
                           copy.alarmConfig.ringtoneName = "افتراضي";

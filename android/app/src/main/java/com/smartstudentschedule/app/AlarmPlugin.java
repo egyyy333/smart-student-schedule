@@ -32,7 +32,7 @@ public class AlarmPlugin extends Plugin {
 
         Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
-        intent.setType("application/json");
+        intent.setType("*/*");
         intent.putExtra(Intent.EXTRA_TITLE, filename);
 
         startActivityForResult(call, intent, "saveFileResult");
@@ -223,5 +223,73 @@ public class AlarmPlugin extends Plugin {
             return days[dayIndex];
         }
         return "السبت";
+    }
+
+    @PluginMethod
+    public void checkOverlayPermission(PluginCall call) {
+        JSObject ret = new JSObject();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            ret.put("hasPermission", android.provider.Settings.canDrawOverlays(getContext()));
+        } else {
+            ret.put("hasPermission", true);
+        }
+        call.resolve(ret);
+    }
+
+    @PluginMethod
+    public void requestOverlayPermission(PluginCall call) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (!android.provider.Settings.canDrawOverlays(getContext())) {
+                Intent intent = new Intent(
+                    android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                    android.net.Uri.parse("package:" + getContext().getPackageName())
+                );
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                getContext().startActivity(intent);
+            }
+        }
+        call.resolve();
+    }
+
+    @PluginMethod
+    public void saveCustomRingtone(PluginCall call) {
+        String base64Data = call.getString("base64Data");
+        if (base64Data == null) {
+            call.reject("base64Data is required");
+            return;
+        }
+
+        try {
+            if (base64Data.contains(",")) {
+                base64Data = base64Data.split(",")[1];
+            }
+
+            byte[] decodedBytes = android.util.Base64.decode(base64Data, android.util.Base64.DEFAULT);
+            java.io.File file = new java.io.File(getContext().getFilesDir(), "custom_ringtone.mp3");
+            java.io.FileOutputStream fos = new java.io.FileOutputStream(file);
+            fos.write(decodedBytes);
+            fos.close();
+
+            JSObject ret = new JSObject();
+            ret.put("success", true);
+            call.resolve(ret);
+        } catch (Exception e) {
+            e.printStackTrace();
+            call.reject("Failed to save custom ringtone: " + e.getMessage());
+        }
+    }
+
+    @PluginMethod
+    public void deleteCustomRingtone(PluginCall call) {
+        try {
+            java.io.File file = new java.io.File(getContext().getFilesDir(), "custom_ringtone.mp3");
+            if (file.exists()) {
+                file.delete();
+            }
+            call.resolve();
+        } catch (Exception e) {
+            e.printStackTrace();
+            call.reject("Failed to delete custom ringtone: " + e.getMessage());
+        }
     }
 }

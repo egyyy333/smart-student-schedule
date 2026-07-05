@@ -3,6 +3,7 @@
 let audioCtx: AudioContext | null = null;
 let activeOscillators: { osc: OscillatorNode; gain: GainNode }[] = [];
 let alarmIntervalId: any = null;
+let customAudioElement: HTMLAudioElement | null = null;
 
 // Initialize Audio Context on demand
 function getAudioContext(): AudioContext {
@@ -46,11 +47,29 @@ function playChimeNote(frequency: number, duration: number, timeOffset: number) 
   }
 }
 
-// Play repeating beautiful chime melody for the alarm
+// Play repeating beautiful chime melody for the alarm (or custom ringtone if set)
 export function startAlarmSound() {
   stopAlarmSound();
   
-  const ctx = getAudioContext();
+  const customBase64 = localStorage.getItem('custom_ringtone_base64');
+  if (customBase64) {
+    try {
+      customAudioElement = new Audio(customBase64);
+      customAudioElement.loop = true;
+      customAudioElement.play().catch(err => {
+        console.error("Failed to play custom Audio element, falling back to synthesiser:", err);
+        startSynthesizedAlarmSound();
+      });
+      return;
+    } catch (e) {
+      console.error("Error setting up custom base64 audio element, fallback to chimes:", e);
+    }
+  }
+
+  startSynthesizedAlarmSound();
+}
+
+function startSynthesizedAlarmSound() {
   const playMelody = () => {
     // Elegant minor pentatonic melody for a beautiful modern chime
     const melody = [523.25, 587.33, 659.25, 783.99, 880.00, 1046.50]; // C5, D5, E5, G5, A5, C6
@@ -66,6 +85,13 @@ export function startAlarmSound() {
 
 // Stop alarm ringing
 export function stopAlarmSound() {
+  if (customAudioElement) {
+    try {
+      customAudioElement.pause();
+      customAudioElement.currentTime = 0;
+    } catch (e) {}
+    customAudioElement = null;
+  }
   if (alarmIntervalId) {
     clearInterval(alarmIntervalId);
     alarmIntervalId = null;
