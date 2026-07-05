@@ -161,7 +161,33 @@ public class AlarmPlugin extends Plugin {
         if (AlarmService.activeService != null) {
             AlarmService.activeService.stopAlarmService();
         }
+        if (MainActivity.isAlarmLaunch) {
+            MainActivity.isAlarmLaunch = false;
+            try {
+                getActivity().finishAndRemoveTask();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
         call.resolve();
+    }
+
+    @PluginMethod
+    public void getPendingAlarm(PluginCall call) {
+        JSObject ret = new JSObject();
+        ret.put("hasPendingAlarm", MainActivity.hasPendingAlarm);
+        if (MainActivity.hasPendingAlarm) {
+            ret.put("subject", MainActivity.pendingSubject);
+            ret.put("day", MainActivity.pendingDay);
+            ret.put("time", MainActivity.pendingTime);
+            
+            // Clear after consumption
+            MainActivity.hasPendingAlarm = false;
+            MainActivity.pendingSubject = null;
+            MainActivity.pendingDay = null;
+            MainActivity.pendingTime = null;
+        }
+        call.resolve(ret);
     }
 
     @PluginMethod
@@ -173,6 +199,14 @@ public class AlarmPlugin extends Plugin {
         Context context = getContext();
         if (AlarmService.activeService != null) {
             AlarmService.activeService.snoozeAlarmService(context, subject, day, time, "");
+        }
+        if (MainActivity.isAlarmLaunch) {
+            MainActivity.isAlarmLaunch = false;
+            try {
+                getActivity().finishAndRemoveTask();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
         call.resolve();
     }

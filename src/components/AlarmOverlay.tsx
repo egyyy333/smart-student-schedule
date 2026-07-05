@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Clock, Volume2, BellRing } from 'lucide-react';
 import { motion } from 'motion/react';
 import { startAlarmSound, stopAlarmSound } from '../audioHelper';
+import { Capacitor } from '@capacitor/core';
 
 interface AlarmOverlayProps {
   subjectName: string;
@@ -9,12 +10,16 @@ interface AlarmOverlayProps {
   scheduleType: string; // 'tutoring' | 'study'
   onDismiss: () => void;
   onSnooze: () => void;
+  isTest?: boolean;
 }
 
-export default function AlarmOverlay({ subjectName, periodName, scheduleType, onDismiss, onSnooze }: AlarmOverlayProps) {
+export default function AlarmOverlay({ subjectName, periodName, scheduleType, onDismiss, onSnooze, isTest }: AlarmOverlayProps) {
   useEffect(() => {
-    // Start alarm audio on mount
-    startAlarmSound();
+    // Start alarm audio on mount only if NOT native (since native handles it) OR if it is a test trigger
+    const isNative = Capacitor.isNativePlatform();
+    if (!isNative || isTest) {
+      startAlarmSound();
+    }
     
     // Auto vibrator if supported
     if ("vibrate" in navigator) {
@@ -25,7 +30,7 @@ export default function AlarmOverlay({ subjectName, periodName, scheduleType, on
       // Clean up audio on unmount
       stopAlarmSound();
     };
-  }, []);
+  }, [isTest]);
 
   const typeLabel = scheduleType === 'school'
     ? 'جدول المدرسة الرسمي 🏫'
@@ -39,7 +44,7 @@ export default function AlarmOverlay({ subjectName, periodName, scheduleType, on
       : 'text-amber-400 bg-amber-950/80 border-amber-500/30';
 
   return (
-    <div id="alarm-overlay-container" className="fixed inset-0 bg-slate-950 flex flex-col justify-center items-center z-50 p-6 text-white font-sans text-center overflow-y-auto">
+    <div id="alarm-overlay-container" className="fixed inset-0 bg-slate-950 flex flex-col justify-center items-center z-[1000] p-6 text-white font-sans text-center overflow-y-auto">
       
       {/* Dynamic particles in background */}
       <div className="absolute inset-0 opacity-10 pointer-events-none overflow-hidden">

@@ -306,11 +306,11 @@ export default function SettingsTab({ state, onSaveState, onLockApp }: SettingsT
                 <label className="text-[10px] font-bold text-slate-400 block">الرمز الحالي:</label>
                 <input
                   type="password"
+                  inputMode="numeric"
                   maxLength={4}
                   value={currentPass}
                   onChange={(e) => setCurrentPass(e.target.value.replace(/\D/g, ''))}
                   className="w-full p-2.5 rounded-xl border border-slate-200 text-center text-slate-800 font-mono font-bold text-sm bg-slate-50 focus:bg-white focus:outline-none focus:border-emerald-500"
-                  placeholder="••••"
                 />
               </div>
 
@@ -318,11 +318,11 @@ export default function SettingsTab({ state, onSaveState, onLockApp }: SettingsT
                 <label className="text-[10px] font-bold text-slate-400 block">الرمز الجديد:</label>
                 <input
                   type="password"
+                  inputMode="numeric"
                   maxLength={4}
                   value={newPass}
                   onChange={(e) => setNewPass(e.target.value.replace(/\D/g, ''))}
                   className="w-full p-2.5 rounded-xl border border-slate-200 text-center text-slate-800 font-mono font-bold text-sm bg-slate-50 focus:bg-white focus:outline-none focus:border-emerald-500"
-                  placeholder="••••"
                 />
               </div>
 
@@ -330,11 +330,11 @@ export default function SettingsTab({ state, onSaveState, onLockApp }: SettingsT
                 <label className="text-[10px] font-bold text-slate-400 block">تأكيد الجديد:</label>
                 <input
                   type="password"
+                  inputMode="numeric"
                   maxLength={4}
                   value={confirmPass}
                   onChange={(e) => setConfirmPass(e.target.value.replace(/\D/g, ''))}
                   className="w-full p-2.5 rounded-xl border border-slate-200 text-center text-slate-800 font-mono font-bold text-sm bg-slate-50 focus:bg-white focus:outline-none focus:border-emerald-500"
-                  placeholder="••••"
                 />
               </div>
             </div>
@@ -446,6 +446,7 @@ export default function SettingsTab({ state, onSaveState, onLockApp }: SettingsT
                 <div className="space-y-1">
                   <input
                     type="password"
+                    inputMode="numeric"
                     maxLength={4}
                     value={securityPassAttempt}
                     onChange={(e) => {
@@ -453,7 +454,6 @@ export default function SettingsTab({ state, onSaveState, onLockApp }: SettingsT
                       setSecurityPassAttempt(e.target.value.replace(/\D/g, ''));
                     }}
                     className="w-48 mx-auto tracking-[0.4em] pr-[0.4em] text-center p-3 rounded-xl border border-slate-200 text-slate-800 font-mono font-black text-xl bg-slate-50 focus:border-emerald-500 focus:bg-white focus:outline-none block"
-                    placeholder="••••"
                     autoFocus
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') handleConfirmSecurityCheck();

@@ -136,21 +136,7 @@ export default function Dashboard({ state, onNavigateToTab }: DashboardProps) {
             </div>
           </div>
 
-          {/* Productivity Prompt */}
-          <div className="bg-emerald-50/50 border border-emerald-100 rounded-2xl p-5">
-            <h4 className="text-sm font-bold text-emerald-800 mb-2 flex items-center gap-1.5">
-              <span>نصيحة اليوم الذكية 💡</span>
-            </h4>
-            <p className="text-xs text-emerald-700/95 leading-relaxed font-medium">
-              تصفح جدولك بدقة، والتزم بالتوقيتات المحددة. لا تؤجل عمل اليوم إلى الغد، وحافظ على شعلة تفوقك متقدة!
-            </p>
-            <button 
-              onClick={() => onNavigateToTab('tasks')}
-              className="mt-4 text-xs font-bold text-emerald-600 hover:text-emerald-800 flex items-center gap-1 cursor-pointer transition-all"
-            >
-              <span>استعرض المهام والواجبات المطلوبة ←</span>
-            </button>
-          </div>
+
 
         </div>
 

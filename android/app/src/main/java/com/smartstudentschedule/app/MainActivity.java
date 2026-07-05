@@ -7,6 +7,11 @@ import android.view.WindowManager;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
+    public static String pendingSubject = null;
+    public static String pendingDay = null;
+    public static String pendingTime = null;
+    public static boolean hasPendingAlarm = false;
+    public static boolean isAlarmLaunch = false;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -57,6 +62,12 @@ public class MainActivity extends BridgeActivity {
             String text = intent.getStringExtra("appointment_text");
             String day = intent.getStringExtra("appointment_day");
             String time = intent.getStringExtra("appointment_time");
+            
+            pendingSubject = text;
+            pendingDay = day;
+            pendingTime = time;
+            hasPendingAlarm = true;
+            isAlarmLaunch = true;
             
             // Clear the trigger so it doesn't fire repeatedly
             intent.removeExtra("trigger_alarm_overlay");

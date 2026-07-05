@@ -17,16 +17,31 @@ type ActiveScheduleType = 'school' | 'tutoring' | 'study';
 export default function SchedulesTab({ state, onSaveState }: SchedulesTabProps) {
   const [activeTab, setActiveTab] = useState<ActiveScheduleType>('school');
   
-  // Local scratchpad states to hold unsaved schedule modifications
-  const [localSchool, setLocalSchool] = useState<ScheduleData>(JSON.parse(JSON.stringify(state.schoolSchedule)));
-  const [localTutoring, setLocalTutoring] = useState<ScheduleData>(JSON.parse(JSON.stringify(state.tutoringSchedule)));
-  const [localStudy, setLocalStudy] = useState<ScheduleData>(JSON.parse(JSON.stringify(state.studySchedule)));
+  // Local scratchpad states to hold unsaved schedule modifications with sessionStorage caching to persist across tabs
+  const [localSchool, setLocalSchool] = useState<ScheduleData>(() => {
+    const cached = sessionStorage.getItem('unsaved_school_schedule');
+    return cached ? JSON.parse(cached) : JSON.parse(JSON.stringify(state.schoolSchedule));
+  });
+  const [localTutoring, setLocalTutoring] = useState<ScheduleData>(() => {
+    const cached = sessionStorage.getItem('unsaved_tutoring_schedule');
+    return cached ? JSON.parse(cached) : JSON.parse(JSON.stringify(state.tutoringSchedule));
+  });
+  const [localStudy, setLocalStudy] = useState<ScheduleData>(() => {
+    const cached = sessionStorage.getItem('unsaved_study_schedule');
+    return cached ? JSON.parse(cached) : JSON.parse(JSON.stringify(state.studySchedule));
+  });
 
-  // Sync with main state if it updates from elsewhere (like backup restore)
+  // Sync with main state ONLY if there are no unsaved changes cached in sessionStorage (e.g. on initial loading or backup restore)
   useEffect(() => {
-    setLocalSchool(JSON.parse(JSON.stringify(state.schoolSchedule)));
-    setLocalTutoring(JSON.parse(JSON.stringify(state.tutoringSchedule)));
-    setLocalStudy(JSON.parse(JSON.stringify(state.studySchedule)));
+    if (!sessionStorage.getItem('unsaved_school_schedule')) {
+      setLocalSchool(JSON.parse(JSON.stringify(state.schoolSchedule)));
+    }
+    if (!sessionStorage.getItem('unsaved_tutoring_schedule')) {
+      setLocalTutoring(JSON.parse(JSON.stringify(state.tutoringSchedule)));
+    }
+    if (!sessionStorage.getItem('unsaved_study_schedule')) {
+      setLocalStudy(JSON.parse(JSON.stringify(state.studySchedule)));
+    }
   }, [state.schoolSchedule, state.tutoringSchedule, state.studySchedule]);
 
   // Keyboard navigation ref tracker
@@ -46,9 +61,25 @@ export default function SchedulesTab({ state, onSaveState }: SchedulesTabProps) 
   };
 
   const updateActiveLocal = (updater: (prev: ScheduleData) => ScheduleData) => {
-    if (activeTab === 'school') setLocalSchool(updater);
-    else if (activeTab === 'tutoring') setLocalTutoring(updater);
-    else setLocalStudy(updater);
+    if (activeTab === 'school') {
+      setLocalSchool(prev => {
+        const next = updater(prev);
+        sessionStorage.setItem('unsaved_school_schedule', JSON.stringify(next));
+        return next;
+      });
+    } else if (activeTab === 'tutoring') {
+      setLocalTutoring(prev => {
+        const next = updater(prev);
+        sessionStorage.setItem('unsaved_tutoring_schedule', JSON.stringify(next));
+        return next;
+      });
+    } else {
+      setLocalStudy(prev => {
+        const next = updater(prev);
+        sessionStorage.setItem('unsaved_study_schedule', JSON.stringify(next));
+        return next;
+      });
+    }
   };
 
   // Change tracking indicator
@@ -252,40 +283,35 @@ export default function SchedulesTab({ state, onSaveState }: SchedulesTabProps) 
     setEditHeaderIndex(null);
   };
 
-  // Undo changes
+  // Undo changes and clear sessionStorage cache for the specific tab
   const handleUndo = () => {
     if (activeTab === 'school') {
+      sessionStorage.removeItem('unsaved_school_schedule');
       setLocalSchool(JSON.parse(JSON.stringify(state.schoolSchedule)));
     } else if (activeTab === 'tutoring') {
+      sessionStorage.removeItem('unsaved_tutoring_schedule');
       setLocalTutoring(JSON.parse(JSON.stringify(state.tutoringSchedule)));
     } else {
+      sessionStorage.removeItem('unsaved_study_schedule');
       setLocalStudy(JSON.parse(JSON.stringify(state.studySchedule)));
     }
   };
 
-  // Save changes & lock with passcode
+  // Save changes directly (passcode protection removed for convenience as requested)
   const handleTriggerSave = () => {
-    setPasscodeAttempt('');
-    setPasscodeError(null);
-    setShowPasscodeModal(true);
-  };
-
-  const handleConfirmSaveWithPasscode = () => {
-    if (passcodeAttempt === state.passcode) {
-      const newState = { ...state };
-      if (activeTab === 'school') {
-        newState.schoolSchedule = localSchool;
-      } else if (activeTab === 'tutoring') {
-        newState.tutoringSchedule = localTutoring;
-      } else {
-        newState.studySchedule = localStudy;
-      }
-      onSaveState(newState);
-      setShowPasscodeModal(false);
-      speakArabicText("تم حفظ الجدول بنجاح");
+    const newState = { ...state };
+    if (activeTab === 'school') {
+      newState.schoolSchedule = localSchool;
+      sessionStorage.removeItem('unsaved_school_schedule');
+    } else if (activeTab === 'tutoring') {
+      newState.tutoringSchedule = localTutoring;
+      sessionStorage.removeItem('unsaved_tutoring_schedule');
     } else {
-      setPasscodeError('⚠️ رمز الدخول خاطئ، يرجى المحاولة مرة أخرى.');
+      newState.studySchedule = localStudy;
+      sessionStorage.removeItem('unsaved_study_schedule');
     }
+    onSaveState(newState);
+    speakArabicText("تم حفظ الجدول بنجاح");
   };
 
   // Keyboard Navigation Handling
@@ -398,8 +424,8 @@ export default function SchedulesTab({ state, onSaveState }: SchedulesTabProps) 
 
   // Render a cell's custom CSS styling depending on schedule type
   const getCellClassName = (hasContent: boolean, isFocused: boolean) => {
-    const base = "p-1 h-12 min-w-[84px] w-[84px] max-w-[84px] border-b border-l border-slate-100 text-center relative group cursor-pointer transition-all text-[10px] font-semibold select-none align-middle ";
-    const focusRing = isFocused ? "ring-2 ring-emerald-500 ring-inset bg-emerald-50/50 " : "";
+    const base = "p-1 h-16 min-w-[84px] w-[84px] max-w-[84px] border-b border-l border-slate-100 text-center relative group cursor-pointer transition-all text-[10px] font-semibold select-none align-middle ";
+    const focusRing = "";
     
     if (activeTab === 'school') {
       return base + focusRing + (hasContent 
@@ -419,67 +445,67 @@ export default function SchedulesTab({ state, onSaveState }: SchedulesTabProps) 
   return (
     <div className="space-y-6 font-sans">
       
-      {/* 1. Schedule Switching Tabs */}
-      <div className="flex bg-white p-1 rounded-2xl border border-slate-100 shadow-sm max-w-xl mx-auto">
-        <button
-          onClick={() => setActiveTab('school')}
-          className={`flex-1 py-3 text-xs md:text-sm font-extrabold rounded-xl transition-all cursor-pointer ${
-            activeTab === 'school' 
-              ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/15' 
-              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-          }`}
-        >
-          جدول الحصص المدرسية 🏫
-        </button>
-        <button
-          onClick={() => setActiveTab('tutoring')}
-          className={`flex-1 py-3 text-xs md:text-sm font-extrabold rounded-xl transition-all cursor-pointer ${
-            activeTab === 'tutoring' 
-              ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/15' 
-              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-          }`}
-        >
-          جدول الدروس الخصوصية 🎓
-        </button>
-        <button
-          onClick={() => setActiveTab('study')}
-          className={`flex-1 py-3 text-xs md:text-sm font-extrabold rounded-xl transition-all cursor-pointer ${
-            activeTab === 'study' 
-              ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/15' 
-              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-          }`}
-        >
-          جدول المذاكرة والمراجعة ✍️
-        </button>
+      {/* 1. Schedule Switching Tabs - Sticky Wrapper */}
+      <div className="sticky top-[61px] md:top-[69px] z-30 bg-slate-50/95 backdrop-blur-md py-2 max-w-xl mx-auto w-full">
+        <div className="flex bg-white p-1 rounded-2xl border border-slate-100 shadow-sm">
+          <button
+            onClick={() => setActiveTab('school')}
+            className={`flex-1 py-3 text-xs md:text-sm font-extrabold rounded-xl transition-all cursor-pointer ${
+              activeTab === 'school' 
+                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/15' 
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+            }`}
+          >
+            جدول المدرسة 🏫
+          </button>
+          <button
+            onClick={() => setActiveTab('tutoring')}
+            className={`flex-1 py-3 text-xs md:text-sm font-extrabold rounded-xl transition-all cursor-pointer ${
+              activeTab === 'tutoring' 
+                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/15' 
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+            }`}
+          >
+            جدول الدروس 🎓
+          </button>
+          <button
+            onClick={() => setActiveTab('study')}
+            className={`flex-1 py-3 text-xs md:text-sm font-extrabold rounded-xl transition-all cursor-pointer ${
+              activeTab === 'study' 
+                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/15' 
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+            }`}
+          >
+            جدول المذاكرة ✍️
+          </button>
+        </div>
       </div>
 
       {/* 2. Control Toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-4 bg-white border border-slate-100 rounded-2xl p-4 shadow-sm">
+      <div className="flex items-center justify-between gap-4 bg-white border border-slate-100 rounded-2xl p-4 shadow-sm">
         
-        <div className="text-slate-400 text-xs font-bold font-sans">
-          تنظيم الأوقات والحصص بكل مرونة ويسر ✏️
-        </div>
-
-        {/* Right Side: Actions (Templates, Clear, Alarm) */}
-        <div className="flex items-center gap-2 flex-wrap">
-          
-          {/* Custom alarms config (All schedules) */}
+        {/* Left Side: Alarm config with bell icon, compact as requested */}
+        <div>
           {(activeTab === 'school' || activeTab === 'tutoring' || activeTab === 'study') && (
             <button
               onClick={() => setShowAlarmModal(true)}
-              className={`px-4 py-2 rounded-xl flex items-center gap-1.5 text-xs font-extrabold transition-all cursor-pointer ${
+              className={`px-3 py-2 rounded-xl flex items-center gap-1.5 text-xs font-extrabold transition-all cursor-pointer ${
                 activeLocal.alarmConfig.enabled 
                   ? 'bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 shadow-sm' 
                   : 'bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200'
               }`}
             >
               <Bell className={`w-4 h-4 ${activeLocal.alarmConfig.enabled ? 'text-amber-500 animate-swing' : ''}`} />
-              <span>إعدادات التنبيه</span>
+              <span>إعدادات</span>
             </button>
           )}
+        </div>
 
-          {/* Zoom +/- Controls */}
-          <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-xl p-1 font-sans text-xs">
+        {/* Right Side: Actions (Zoom controls and Clear button with precise gap spacing) */}
+        <div className="flex items-center gap-2">
+          
+          {/* Zoom +/- Controls with right margin for separation */}
+          <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-xl p-1 font-sans text-xs mr-1 ml-4">
             <button
               onClick={() => handleZoom('out')}
               className="w-7 h-7 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg flex items-center justify-center text-slate-700 font-extrabold transition-colors cursor-pointer"
@@ -499,7 +525,7 @@ export default function SchedulesTab({ state, onSaveState }: SchedulesTabProps) 
             </button>
           </div>
 
-          {/* Clear Grid */}
+          {/* Clear Grid - Separated with left-margin on zoom controls and distinct spacing */}
           <button
             onClick={() => setShowClearConfirm(true)}
             className="w-9 h-9 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-xl flex items-center justify-center transition-colors cursor-pointer"
@@ -550,7 +576,7 @@ export default function SchedulesTab({ state, onSaveState }: SchedulesTabProps) 
               {DAYS.map((day) => (
                 <tr key={day} className="hover:bg-slate-50/30">
                   {/* Day Label column: Sticky on the right */}
-                  <td className="p-1 text-[10px] font-extrabold text-slate-800 bg-slate-100 border-l border-b border-slate-200 text-center sticky right-0 z-10 select-none min-w-[60px] w-[60px] max-w-[60px] h-12 shadow-xs align-middle">
+                  <td className="p-1 text-[10px] font-extrabold text-slate-800 bg-slate-100 border-l border-b border-slate-200 text-center sticky right-0 z-10 select-none min-w-[60px] w-[60px] max-w-[60px] h-16 shadow-xs align-middle">
                     <div className="flex items-center justify-center w-full h-full font-bold leading-tight">
                       {day}
                     </div>
@@ -569,7 +595,7 @@ export default function SchedulesTab({ state, onSaveState }: SchedulesTabProps) 
                         tabIndex={0}
                         className={getCellClassName(!!value, isFocused)}
                       >
-                        <div className="flex flex-col items-center justify-center w-full h-full min-h-[32px] relative">
+                        <div className="flex flex-col items-center justify-center w-full h-full min-h-[48px] relative">
                           {value ? (
                             <div className="flex flex-col items-center justify-center w-full px-1 leading-tight text-center break-words max-h-full overflow-hidden">
                               <span className="font-extrabold text-[10px] leading-tight line-clamp-2">{value}</span>
@@ -810,73 +836,7 @@ export default function SchedulesTab({ state, onSaveState }: SchedulesTabProps) 
         )}
       </AnimatePresence>
 
-      {/* Passcode Lock Input Dialog for Saving */}
-      <AnimatePresence>
-        {showPasscodeModal && (
-          <div className="fixed inset-0 bg-slate-950/50 backdrop-blur-xs flex items-center justify-center z-50 p-4 font-sans">
-            <motion.div 
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl border border-slate-100"
-            >
-              <div className="p-5 border-b border-slate-100 bg-slate-50 text-center relative">
-                <h3 className="text-sm font-extrabold text-slate-800">🔒 تأكيد الهوية لحفظ الجدول</h3>
-                <button 
-                  onClick={() => setShowPasscodeModal(false)}
-                  className="absolute left-4 top-4 text-xs font-bold text-slate-400 hover:text-slate-600"
-                >
-                  ✕
-                </button>
-              </div>
 
-              <div className="p-6 space-y-4">
-                <p className="text-xs text-slate-400 font-medium text-center leading-relaxed">
-                  لحماية جدولك من تطفل الآخرين، يرجى كتابة رمز دخول التطبيق المكون من 4 أرقام لتأكيد الحفظ بالذاكرة.
-                </p>
-
-                <div className="space-y-1">
-                  <input
-                    type="password"
-                    maxLength={4}
-                    value={passcodeAttempt}
-                    onChange={(e) => {
-                      setPasscodeError(null);
-                      setPasscodeAttempt(e.target.value.replace(/\D/g, ''));
-                    }}
-                    className="w-48 mx-auto tracking-[0.4em] pr-[0.4em] text-center p-3 rounded-xl border border-slate-200 text-slate-800 font-mono font-black text-xl bg-slate-50 focus:border-emerald-500 focus:bg-white focus:outline-none transition-all block"
-                    placeholder="••••"
-                    autoFocus
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleConfirmSaveWithPasscode();
-                    }}
-                  />
-                  {passcodeError && (
-                    <p className="text-[11px] font-bold text-rose-500 text-center mt-1">
-                      {passcodeError}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <div className="p-4 bg-slate-50 flex gap-2 justify-stretch border-t border-slate-100">
-                <button
-                  onClick={() => setShowPasscodeModal(false)}
-                  className="flex-1 py-2.5 bg-white border border-slate-200 text-xs font-bold text-slate-700 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer"
-                >
-                  إلغاء
-                </button>
-                <button
-                  onClick={handleConfirmSaveWithPasscode}
-                  className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold rounded-xl transition-colors cursor-pointer shadow-md shadow-emerald-600/10"
-                >
-                  تأكيد الحفظ
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
 
       {/* Alarms Settings Modal (Android High-Fidelity details) */}
       <AnimatePresence>
@@ -991,7 +951,8 @@ export default function SchedulesTab({ state, onSaveState }: SchedulesTabProps) 
                               detail: {
                                 subject: "حصة تجريبية لاختبار المنبه الذكي ⏰",
                                 time: "الوقت الحالي للرنين",
-                                scheduleType: activeTab
+                                scheduleType: activeTab,
+                                isTest: true
                               }
                             });
                             window.dispatchEvent(testEvent);

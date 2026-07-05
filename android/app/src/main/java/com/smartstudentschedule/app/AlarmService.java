@@ -124,7 +124,34 @@ public class AlarmService extends Service {
         return START_NOT_STICKY;
     }
 
+    private void stopRinging() {
+        try {
+            if (mediaPlayer != null) {
+                if (mediaPlayer.isPlaying()) {
+                    mediaPlayer.stop();
+                }
+                mediaPlayer.release();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            mediaPlayer = null;
+        }
+
+        try {
+            if (vibrator != null) {
+                vibrator.cancel();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            vibrator = null;
+        }
+    }
+
     private void startRinging() {
+        stopRinging();
+
         // Vibrator
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -224,26 +251,7 @@ public class AlarmService extends Service {
     @Override
     public void onDestroy() {
         activeService = null;
-        try {
-            if (mediaPlayer != null) {
-                mediaPlayer.stop();
-                mediaPlayer.release();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            mediaPlayer = null;
-        }
-
-        try {
-            if (vibrator != null) {
-                vibrator.cancel();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            vibrator = null;
-        }
+        stopRinging();
 
         try {
             if (wakeLock != null && wakeLock.isHeld()) {

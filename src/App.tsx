@@ -53,7 +53,8 @@ export default function App() {
   const [activeAlarm, setActiveAlarm] = useState<{
     subjectName: string;
     periodName: string;
-    scheduleType: 'tutoring' | 'study';
+    scheduleType: 'school' | 'tutoring' | 'study';
+    isTest?: boolean;
   } | null>(null);
 
   const [lastFiredAlarm, setLastFiredAlarm] = useState<string>('');
@@ -76,17 +77,39 @@ export default function App() {
       }
 
       if (payload && payload.subject) {
-        // Automatically bypass keyguard locking state and show the alarm immediately
-        setIsUnlocked(true);
+        // Show the alarm overlay immediately (rendered on top at z-[1000] layer)
         setActiveAlarm({
           subjectName: payload.subject,
           periodName: payload.time || payload.header || 'المنبه الموقوت',
-          scheduleType: 'tutoring' // Default to tutoring or guess based on header name
+          scheduleType: 'tutoring', // Default to tutoring
+          isTest: payload.isTest || false
         });
       }
     };
 
+    // Cold-start pending alarm retrieval (if app was booted fresh by system alarm manager)
+    const checkPendingAlarmOnStartup = async () => {
+      try {
+        if (AlarmPlugin && typeof AlarmPlugin.getPendingAlarm === 'function') {
+          const res = await AlarmPlugin.getPendingAlarm();
+          if (res && res.hasPendingAlarm) {
+            console.log("Found pending native alarm on startup:", res);
+            setActiveAlarm({
+              subjectName: res.subject || 'المنبه الموقوت',
+              periodName: res.time || 'الحصة الحالية',
+              scheduleType: 'tutoring',
+              isTest: false
+            });
+          }
+        }
+      } catch (err) {
+        console.warn("Failed to fetch pending alarm natively on startup:", err);
+      }
+    };
+
     window.addEventListener('alarmTriggered', handleNativeAlarm);
+    checkPendingAlarmOnStartup();
+
     return () => {
       window.removeEventListener('alarmTriggered', handleNativeAlarm);
     };
@@ -242,6 +265,7 @@ export default function App() {
             subjectName={activeAlarm.subjectName}
             periodName={activeAlarm.periodName}
             scheduleType={activeAlarm.scheduleType}
+            isTest={activeAlarm.isTest}
             onDismiss={async () => {
               setActiveAlarm(null);
               try {
@@ -313,7 +337,7 @@ export default function App() {
           </header>
 
           {/* Core Scrollable Panel viewport */}
-          <main className="max-w-7xl mx-auto w-full px-4 py-6 flex-1 mb-32 md:mb-28 flex flex-col justify-between">
+          <main className="max-w-7xl mx-auto w-full px-4 py-6 flex-1 mb-36 md:mb-32 flex flex-col justify-between">
             <div className="flex-1">
               <AnimatePresence mode="wait">
                 <motion.div
@@ -354,7 +378,7 @@ export default function App() {
           </main>
 
           {/* Centralized Highly Prominent Copyright Footer fixed above the navigation bar */}
-          <div className="fixed bottom-[44px] left-0 right-0 flex justify-center items-center z-20 pointer-events-none select-none">
+          <div className="fixed bottom-[68px] left-0 right-0 flex justify-center items-center z-20 pointer-events-none select-none">
             <div className="pointer-events-auto select-all">
               <p className="text-[10px] md:text-xs font-bold text-slate-700 bg-white/95 backdrop-blur-xs border border-slate-200/80 shadow-md px-4 py-1 rounded-full">
                 بواسطة الشيخ أحمد النمس غفر الله له
@@ -362,9 +386,9 @@ export default function App() {
             </div>
           </div>
 
-          {/* Bottom/Footer Navigation Menu */}
-          <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-150 shadow-lg z-30 select-none">
-            <div className="max-w-xl mx-auto px-4 py-0.5 flex justify-around">
+          {/* Bottom/Footer Floating Navigation Menu */}
+          <nav className="fixed bottom-3 left-4 right-4 z-30 max-w-xl mx-auto bg-white/95 backdrop-blur-md border border-slate-200/80 rounded-2xl shadow-xl select-none">
+            <div className="px-4 py-1 md:py-1.5 flex justify-around">
               
               {/* Home Tab */}
               <button
