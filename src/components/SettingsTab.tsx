@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Capacitor } from '@capacitor/core';
 import { 
   User, Lock, Key, Database, Download, Upload, Trash2, RefreshCw, Check, AlertTriangle, ShieldCheck 
 } from 'lucide-react';
@@ -122,8 +123,21 @@ export default function SettingsTab({ state, onSaveState, onLockApp }: SettingsT
       const filename = `جدول_الطالب_الذكي_نسخة_احتياطية_${timestamp}.json`;
 
       let sharedNatively = false;
-      // If Web Share API is supported, let the user save to Google Drive, Files, or send to social apps
-      if (navigator.share) {
+
+      // If running on native Android/iOS, trigger our native Storage Access Framework SAF File Picker
+      if (Capacitor.isNativePlatform()) {
+        try {
+          const { AlarmPlugin } = await import('../utils/alarmSync');
+          await AlarmPlugin.exportBackup({ data: dataStr, filename: filename });
+          sharedNatively = true;
+          speakArabicText("تم تصدير وحفظ النسخة الاحتياطية بنجاح");
+        } catch (nativeErr) {
+          console.warn("Native exportBackup failed, trying fallback Web Share API:", nativeErr);
+        }
+      }
+
+      // If not completed natively, try standard Web Share API
+      if (!sharedNatively && navigator.share) {
         try {
           const file = new File([dataStr], filename, { type: 'application/json' });
           if (navigator.canShare && navigator.canShare({ files: [file] })) {

@@ -11,11 +11,65 @@ import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
+import com.getcapacitor.annotation.ActivityCallback;
+import androidx.activity.result.ActivityResult;
 import org.json.JSONException;
 import java.util.Calendar;
 
 @CapacitorPlugin(name = "AlarmPlugin")
 public class AlarmPlugin extends Plugin {
+    private String backupDataStr = "";
+
+    @PluginMethod
+    public void exportBackup(PluginCall call) {
+        String data = call.getString("data");
+        String filename = call.getString("filename");
+        if (data == null || filename == null) {
+            call.reject("Both data and filename are required");
+            return;
+        }
+        this.backupDataStr = data;
+
+        Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("application/json");
+        intent.putExtra(Intent.EXTRA_TITLE, filename);
+
+        startActivityForResult(call, intent, "saveFileResult");
+    }
+
+    @ActivityCallback
+    private void saveFileResult(PluginCall call, ActivityResult result) {
+        if (call == null) return;
+        if (result.getResultCode() == android.app.Activity.RESULT_OK) {
+            Intent intent = result.getData();
+            if (intent != null && intent.getData() != null) {
+                android.net.Uri uri = intent.getData();
+                try {
+                    android.os.ParcelFileDescriptor pfd = getContext().getContentResolver().openFileDescriptor(uri, "w");
+                    if (pfd != null) {
+                        java.io.FileOutputStream fileOutputStream = new java.io.FileOutputStream(pfd.getFileDescriptor());
+                        fileOutputStream.write(this.backupDataStr.getBytes("UTF-8"));
+                        fileOutputStream.close();
+                        pfd.close();
+                        
+                        JSObject res = new JSObject();
+                        res.put("success", true);
+                        res.put("uri", uri.toString());
+                        call.resolve(res);
+                        return;
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    call.reject("Error writing file: " + e.getMessage());
+                    return;
+                }
+            }
+            call.reject("Failed to obtain file path");
+        } else {
+            call.reject("User cancelled the operation");
+        }
+    }
 
     @PluginMethod
     public void setAlarms(PluginCall call) {

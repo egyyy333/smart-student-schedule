@@ -29,6 +29,7 @@ public class MainActivity extends BridgeActivity {
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
+        setIntent(intent);
         handleIntent(intent);
     }
 
@@ -40,6 +41,18 @@ public class MainActivity extends BridgeActivity {
 
     private void handleIntent(Intent intent) {
         if (intent != null && "true".equals(intent.getStringExtra("trigger_alarm_overlay"))) {
+            // Wake screen and show over lock screen
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+                setShowWhenLocked(true);
+                setTurnScreenOn(true);
+            }
+            getWindow().addFlags(
+                WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED |
+                WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON |
+                WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON |
+                WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
+            );
+
             String text = intent.getStringExtra("appointment_text");
             String day = intent.getStringExtra("appointment_day");
             String time = intent.getStringExtra("appointment_time");

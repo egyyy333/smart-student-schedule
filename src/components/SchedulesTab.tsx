@@ -348,7 +348,7 @@ export default function SchedulesTab({ state, onSaveState }: SchedulesTabProps) 
 
   // Render a cell's custom CSS styling depending on schedule type
   const getCellClassName = (hasContent: boolean, isFocused: boolean) => {
-    const base = "p-1 h-14 min-w-[88px] w-[88px] max-w-[88px] border-b border-l border-slate-100 text-center relative group cursor-pointer transition-all flex flex-col items-center justify-center text-[10px] font-semibold select-none ";
+    const base = "p-1 h-16 min-w-[72px] w-[72px] max-w-[72px] border-b border-l border-slate-100 text-center relative group cursor-pointer transition-all text-[10px] font-semibold select-none align-middle ";
     const focusRing = isFocused ? "ring-2 ring-emerald-500 ring-inset bg-emerald-50/50 " : "";
     
     if (activeTab === 'school') {
@@ -476,18 +476,18 @@ export default function SchedulesTab({ state, onSaveState }: SchedulesTabProps) 
             <thead>
               <tr className="bg-emerald-700 text-white">
                 {/* Sticky top-right cell */}
-                <th className="p-1 text-[10px] font-black border-l border-b border-emerald-800 text-center sticky right-0 top-0 z-40 bg-emerald-700 min-w-[48px] w-[48px] max-w-[48px] h-18 shadow-sm select-none">
+                <th className="p-1 text-[10px] font-black border-l border-b border-emerald-800 text-center sticky right-0 top-0 z-40 bg-emerald-700 min-w-[32px] w-[32px] max-w-[32px] h-18 shadow-sm select-none">
                   اليوم
                 </th>
                 {activeLocal.headers.map((header, idx) => (
                   <th 
                     key={idx} 
                     onClick={() => handleOpenEditHeader(idx, header)}
-                    className="p-1 text-[9px] font-black tracking-tight border-l border-b border-emerald-800 text-center cursor-pointer hover:bg-emerald-800/80 transition-colors select-none group min-w-[88px] w-[88px] max-w-[88px] h-18 sticky top-0 z-20 bg-emerald-700 shadow-sm"
+                    className="p-1 text-[9px] font-black tracking-tight border-l border-b border-emerald-800 text-center cursor-pointer hover:bg-emerald-800/80 transition-colors select-none group min-w-[72px] w-[72px] max-w-[72px] h-18 sticky top-0 z-20 bg-emerald-700 shadow-sm"
                     title="انقر لتعديل اسم الفترة/الوقت"
                   >
                     <div className="flex flex-col items-center justify-center h-full w-full leading-tight text-center px-0.5 gap-0.5">
-                      <span className="whitespace-pre-line line-clamp-2 font-black">{header}</span>
+                      <span className="whitespace-pre-line line-clamp-2 font-black text-[8px]">{header}</span>
                       <span className="text-[9px] text-emerald-300 font-bold opacity-0 group-hover:opacity-100 transition-opacity">✏️</span>
                     </div>
                   </th>
@@ -500,8 +500,8 @@ export default function SchedulesTab({ state, onSaveState }: SchedulesTabProps) 
               {DAYS.map((day) => (
                 <tr key={day} className="hover:bg-slate-50/30">
                   {/* Day Label column: Sticky on the right */}
-                  <td className="p-1 text-[10px] font-extrabold text-slate-800 bg-slate-100 border-l border-b border-slate-200 text-center sticky right-0 z-10 select-none min-w-[48px] w-[48px] max-w-[48px] h-14 shadow-xs align-middle">
-                    <div className="flex items-center justify-center w-full h-full font-bold">
+                  <td className="p-1 text-[10px] font-extrabold text-slate-800 bg-slate-100 border-l border-b border-slate-200 text-center sticky right-0 z-10 select-none min-w-[32px] w-[32px] max-w-[32px] h-16 shadow-xs align-middle">
+                    <div className="flex items-center justify-center w-full h-full font-bold leading-tight">
                       {day}
                     </div>
                   </td>
@@ -519,24 +519,26 @@ export default function SchedulesTab({ state, onSaveState }: SchedulesTabProps) 
                         tabIndex={0}
                         className={getCellClassName(!!value, isFocused)}
                       >
-                        {value ? (
-                          <div className="flex flex-col items-center justify-center w-full px-1 leading-tight text-center break-words max-h-full overflow-hidden">
-                            <span className="font-extrabold text-[10px] leading-tight line-clamp-2">{value}</span>
-                            
-                            {/* Small clear "X" button on hover */}
-                            <button
-                              onClick={(e) => handleClearCellSingle(day, header, e)}
-                              className="absolute top-0.5 left-0.5 w-3.5 h-3.5 bg-slate-200/90 hover:bg-rose-500 hover:text-white rounded-full flex items-center justify-center text-[8px] opacity-0 group-hover:opacity-100 transition-opacity"
-                              title="تفريغ الخلية"
-                            >
-                              ✕
-                            </button>
-                          </div>
-                        ) : (
-                          <span className="text-sm font-bold text-emerald-600/30 group-hover:text-emerald-600 transition-colors select-none">
-                            +
-                          </span>
-                        )}
+                        <div className="flex flex-col items-center justify-center w-full h-full min-h-[48px] relative">
+                          {value ? (
+                            <div className="flex flex-col items-center justify-center w-full px-1 leading-tight text-center break-words max-h-full overflow-hidden">
+                              <span className="font-extrabold text-[9px] leading-tight line-clamp-2">{value}</span>
+                              
+                              {/* Small clear "X" button on hover */}
+                              <button
+                                onClick={(e) => handleClearCellSingle(day, header, e)}
+                                className="absolute top-0.5 left-0.5 w-3.5 h-3.5 bg-slate-200/90 hover:bg-rose-500 hover:text-white rounded-full flex items-center justify-center text-[8px] opacity-0 group-hover:opacity-100 transition-opacity"
+                                title="تفريغ الخلية"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="text-sm font-bold text-emerald-600/30 group-hover:text-emerald-600 transition-colors select-none">
+                              +
+                            </span>
+                          )}
+                        </div>
                       </td>
                     );
                   })}

@@ -65,6 +65,31 @@ export async function syncAndroidAlarms(state: AppState) {
       });
     }
 
+    // 3. School schedule (جدول الحصص المدرسية) - Link Alarms!
+    const school = state.schoolSchedule;
+    if (school && school.alarmConfig && school.alarmConfig.enabled) {
+      const headers = school.headers;
+      const grid = school.grid;
+      const times = school.alarmConfig.times;
+
+      DAYS.forEach((day, dIdx) => {
+        headers.forEach((header, hIdx) => {
+          const subject = grid[day]?.[header] || "";
+          const time = times[header] || "";
+          if (subject && time) {
+            alarmsToSet.push({
+              dayIndex: dIdx,
+              hourIndex: hIdx,
+              time: time,
+              subject: subject,
+              header: header,
+              enabled: true
+            });
+          }
+        });
+      });
+    }
+
     // Call the native bridge
     await AlarmPlugin.setAlarms({ alarms: alarmsToSet });
     console.log("Successfully synchronized alarms with native Android subsystem:", alarmsToSet);
