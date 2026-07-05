@@ -10,6 +10,7 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        registerPlugin(AlarmPlugin.class);
         super.onCreate(savedInstanceState);
         
         // Enable showing over keyguard and waking the screen up

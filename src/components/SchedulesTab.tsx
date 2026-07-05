@@ -911,9 +911,6 @@ export default function SchedulesTab({ state, onSaveState }: SchedulesTabProps) 
                 <div className="flex items-center justify-between p-4 bg-amber-50/40 border border-amber-100 rounded-2xl">
                   <div className="space-y-1">
                     <span className="text-xs font-extrabold text-amber-900 block">تفعيل الإشعارات والتنبيهات الموقوتة</span>
-                    <span className="text-[10px] text-amber-700/80 font-medium block">
-                      سيقوم التطبيق بالرنين صوتياً عند حلول أوقات الحصص ومذاكرة المواد المحددة بالجدول.
-                    </span>
                   </div>
                   <div className="flex items-center gap-3 select-none">
                     <span className="text-xs font-black text-slate-700">تفعيل</span>
@@ -936,181 +933,200 @@ export default function SchedulesTab({ state, onSaveState }: SchedulesTabProps) 
                   </div>
                 </div>
 
-                {/* 1.5. Overlay Permission Request */}
-                <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex flex-col gap-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="space-y-1">
-                      <span className="text-xs font-extrabold text-slate-800 block">صلاحية الظهور فوق التطبيقات وشاشة القفل 🛡️</span>
-                      <span className="text-[10px] text-slate-500 block leading-relaxed">
-                        هذه الصلاحية ضرورية جداً ليتمكن المنبه من إيقاظ الشاشة وعرض صفحة الرنين بالكامل عند قفل الهاتف أو غلق التطبيق.
-                      </span>
-                    </div>
-                    {hasOverlayPermission ? (
-                      <span className="shrink-0 px-2 py-0.5 bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-full text-[9px] font-black leading-none">
-                        مفعّلة ✓
-                      </span>
-                    ) : (
-                      <span className="shrink-0 px-2 py-0.5 bg-rose-100 text-rose-800 border border-rose-200 rounded-full text-[9px] font-black leading-none">
-                        غير مفعّلة !
-                      </span>
-                    )}
-                  </div>
-                  
-                  {!hasOverlayPermission && (
-                    <button
-                      onClick={handleRequestOverlayPermission}
-                      className="w-full py-2 bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white text-xs font-black rounded-xl transition-all shadow-xs cursor-pointer"
+                <AnimatePresence initial={false}>
+                  {activeLocal.alarmConfig.enabled && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="space-y-6 overflow-hidden"
                     >
-                      تفعيل صلاحية الظهور فوق التطبيقات الآن ⚙️
-                    </button>
-                  )}
-                  
-                  <button
-                    onClick={checkNativeOverlayPermission}
-                    className="text-[9px] text-slate-400 hover:text-slate-600 underline text-right font-medium self-end"
-                  >
-                    إعادة التحقق من حالة الصلاحية 🔄
-                  </button>
-                </div>
-
-                {/* 1.8. Test Alarm Trigger */}
-                <div className="p-4 bg-emerald-50/50 border border-emerald-100 rounded-2xl flex items-center justify-between gap-4">
-                  <div className="space-y-1">
-                    <span className="text-xs font-extrabold text-emerald-900 block">اختبار وفحص منبه التطبيق 🔔</span>
-                    <span className="text-[10px] text-emerald-700/80 block">
-                      انقر لاختبار ظهور شاشة الرنين وتجربة تشغيل نغمتك المضبوطة للتأكد من تفعيلها بشكل صحيح.
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => {
-                      // Trigger custom window event which is handled in App.tsx
-                      const testEvent = new CustomEvent("alarmTriggered", {
-                        detail: {
-                          subject: "حصة تجريبية لاختبار المنبه الذكي ⏰",
-                          time: "الوقت الحالي للرنين",
-                          scheduleType: activeTab
-                        }
-                      });
-                      window.dispatchEvent(testEvent);
-                      setShowAlarmModal(false); // Hide settings modal to let them see the full-screen overlay!
-                      speakArabicText("بدء اختبار المنبه التجريبي");
-                    }}
-                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black rounded-xl shadow-md transition-all shrink-0 cursor-pointer"
-                  >
-                    تجربة رنين المنبه
-                  </button>
-                </div>
-
-                {/* 2. Audio Ringtone Selector */}
-                <div className="space-y-2">
-                  <h4 className="text-xs font-extrabold text-slate-600">إدارة نغمة الرنين</h4>
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      onClick={async () => {
-                        localStorage.removeItem('custom_ringtone_base64');
-                        try {
-                          const { AlarmPlugin } = await import('../utils/alarmSync');
-                          if (AlarmPlugin && typeof AlarmPlugin.deleteCustomRingtone === 'function') {
-                            await AlarmPlugin.deleteCustomRingtone();
-                          }
-                        } catch (err) {
-                          console.warn("Native deleteCustomRingtone not available:", err);
-                        }
-                        updateActiveLocal(prev => {
-                          const copy = { ...prev };
-                          copy.alarmConfig.ringtoneName = "افتراضي";
-                          return copy;
-                        });
-                        speakArabicText("نغمة رنين افتراضية");
-                      }}
-                      className={`p-3 rounded-xl border text-center transition-all cursor-pointer ${
-                        activeLocal.alarmConfig.ringtoneName === "افتراضي"
-                          ? 'bg-emerald-50 border-emerald-300 text-emerald-800 font-bold'
-                          : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-                      }`}
-                    >
-                      <span className="text-xs block">نغمة الهاتف الافتراضية</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        fileInputRef.current?.click();
-                      }}
-                      className={`p-3 rounded-xl border text-center transition-all cursor-pointer ${
-                        activeLocal.alarmConfig.ringtoneName !== "افتراضي"
-                          ? 'bg-emerald-50 border-emerald-300 text-emerald-800 font-bold'
-                          : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-                      }`}
-                    >
-                      <span className="text-xs block">نغمة رنين مخصصة</span>
-                      {activeLocal.alarmConfig.ringtoneName !== "افتراضي" && (
-                        <span className="text-[9px] text-emerald-600 font-mono mt-1 block truncate max-w-[150px]">
-                          {activeLocal.alarmConfig.ringtoneName}
-                        </span>
-                      )}
-                    </button>
-                  </div>
-                  
-                  {/* Hidden File Input for Device Ringtone Storage access */}
-                  <input 
-                    type="file" 
-                    ref={fileInputRef} 
-                    onChange={handleCustomRingtoneChange} 
-                    accept="audio/*" 
-                    className="hidden" 
-                  />
-                </div>
-
-                {/* 3. Periods mapped to alarms list */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between pb-1 border-b border-slate-100">
-                    <h4 className="text-xs font-extrabold text-slate-600">أوقات الرنين والمزامنة اليومية</h4>
-                    <span className="text-[10px] text-slate-400">انقر لتعديل التوقيت</span>
-                  </div>
-
-                  <div className="space-y-2.5">
-                    {activeLocal.headers.map((header) => {
-                      const alarmTime = activeLocal.alarmConfig.times[header] || "12:00";
-                      
-                      // Gather subject summary of this slot across weekdays
-                      const weekdaysWithSubjects = DAYS.map(day => {
-                        const subj = activeLocal.grid[day]?.[header] || "";
-                        return subj ? `${day}: ${subj}` : null;
-                      }).filter(Boolean);
-
-                      const subjectSummaryText = weekdaysWithSubjects.length > 0 
-                        ? weekdaysWithSubjects.slice(0, 3).join(" | ") + (weekdaysWithSubjects.length > 3 ? "..." : "")
-                        : "لا توجد مواد دراسية مجدولة في هذا العمود";
-
-                      return (
-                        <div 
-                          key={header}
-                          onClick={() => handleOpenTimepicker(header)}
-                          className="flex items-center justify-between p-3.5 bg-slate-50 hover:bg-slate-100 border border-slate-150 rounded-2xl cursor-pointer transition-colors"
-                        >
-                          {/* Right: Alarm time indicator */}
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center">
-                              <Clock className="w-4 h-4" />
-                            </div>
-                            <div className="space-y-0.5">
-                              <span className="text-xs font-black text-slate-800 block">
-                                {header}
-                              </span>
-                              <span className="text-[10px] text-slate-400 font-medium block">
-                                {subjectSummaryText}
-                              </span>
-                            </div>
+                      {/* 1.5. Overlay Permission Request */}
+                      <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex flex-col gap-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="space-y-1">
+                            <span className="text-xs font-extrabold text-slate-800 block">صلاحية الظهور فوق التطبيقات وشاشة القفل 🛡️</span>
+                            <span className="text-[10px] text-slate-500 block leading-relaxed">
+                              هذه الصلاحية ضرورية جداً ليتمكن المنبه من إيقاظ الشاشة وعرض صفحة الرنين بالكامل عند قفل الهاتف أو غلق التطبيق.
+                            </span>
                           </div>
-
-                          {/* Left: Beautiful 12-hour display */}
-                          <span className="text-xs font-mono font-bold bg-white text-slate-700 px-3 py-1.5 rounded-lg border border-slate-200">
-                            {formatTime12(alarmTime)}
-                          </span>
+                          {hasOverlayPermission ? (
+                            <span className="shrink-0 px-2 py-0.5 bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-full text-[9px] font-black leading-none">
+                              مفعّلة ✓
+                            </span>
+                          ) : (
+                            <span className="shrink-0 px-2 py-0.5 bg-rose-100 text-rose-800 border border-rose-200 rounded-full text-[9px] font-black leading-none">
+                              غير مفعّلة !
+                            </span>
+                          )}
                         </div>
-                      );
-                    })}
-                  </div>
-                </div>
+                        
+                        {!hasOverlayPermission && (
+                          <button
+                            onClick={handleRequestOverlayPermission}
+                            className="w-full py-2 bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white text-xs font-black rounded-xl transition-all shadow-xs cursor-pointer"
+                          >
+                            تفعيل صلاحية الظهور فوق التطبيقات الآن ⚙️
+                          </button>
+                        )}
+                        
+                        <button
+                          onClick={checkNativeOverlayPermission}
+                          className="text-[9px] text-slate-400 hover:text-slate-600 underline text-right font-medium self-end"
+                        >
+                          إعادة التحقق من حالة الصلاحية 🔄
+                        </button>
+                      </div>
+
+                      {/* 1.8. Test Alarm Trigger */}
+                      <div className="p-4 bg-emerald-50/50 border border-emerald-100 rounded-2xl flex items-center justify-between gap-4">
+                        <div className="space-y-1">
+                          <span className="text-xs font-extrabold text-emerald-900 block">اختبار وفحص منبه التطبيق 🔔</span>
+                        </div>
+                        <button
+                          onClick={() => {
+                            // Trigger custom window event which is handled in App.tsx
+                            const testEvent = new CustomEvent("alarmTriggered", {
+                              detail: {
+                                subject: "حصة تجريبية لاختبار المنبه الذكي ⏰",
+                                time: "الوقت الحالي للرنين",
+                                scheduleType: activeTab
+                              }
+                            });
+                            window.dispatchEvent(testEvent);
+                            setShowAlarmModal(false); // Hide settings modal to let them see the full-screen overlay!
+                            speakArabicText("بدء اختبار المنبه التجريبي");
+                          }}
+                          className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black rounded-xl shadow-md transition-all shrink-0 cursor-pointer"
+                        >
+                          تجربة رنين المنبه
+                        </button>
+                      </div>
+
+                      {/* 2. Audio Ringtone Selector */}
+                      <div className="space-y-2">
+                        <h4 className="text-xs font-extrabold text-slate-600">إدارة نغمة الرنين</h4>
+                        <div className="grid grid-cols-2 gap-3">
+                          <button
+                            onClick={async () => {
+                              localStorage.removeItem('custom_ringtone_base64');
+                              try {
+                                const { AlarmPlugin } = await import('../utils/alarmSync');
+                                if (AlarmPlugin && typeof AlarmPlugin.deleteCustomRingtone === 'function') {
+                                  await AlarmPlugin.deleteCustomRingtone();
+                                }
+                              } catch (err) {
+                                console.warn("Native deleteCustomRingtone not available:", err);
+                              }
+                              updateActiveLocal(prev => {
+                                const copy = { ...prev };
+                                copy.alarmConfig.ringtoneName = "افتراضي";
+                                return copy;
+                              });
+                              speakArabicText("نغمة رنين افتراضية");
+                            }}
+                            className={`p-3 rounded-xl border text-center transition-all cursor-pointer ${
+                              activeLocal.alarmConfig.ringtoneName === "افتراضي"
+                                ? 'bg-emerald-50 border-emerald-300 text-emerald-800 font-bold'
+                                : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                            }`}
+                          >
+                            <span className="text-xs block">نغمة الهاتف الافتراضية</span>
+                          </button>
+                          <button
+                            onClick={() => {
+                              fileInputRef.current?.click();
+                            }}
+                            className={`p-3 rounded-xl border text-center transition-all cursor-pointer ${
+                              activeLocal.alarmConfig.ringtoneName !== "افتراضي"
+                                ? 'bg-emerald-50 border-emerald-300 text-emerald-800 font-bold'
+                                : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                            }`}
+                          >
+                            <span className="text-xs block">نغمة رنين مخصصة</span>
+                            {activeLocal.alarmConfig.ringtoneName !== "افتراضي" && (
+                              <span className="text-[9px] text-emerald-600 font-mono mt-1 block truncate max-w-[150px]">
+                                {activeLocal.alarmConfig.ringtoneName}
+                              </span>
+                            )}
+                          </button>
+                        </div>
+                        
+                        {/* Hidden File Input for Device Ringtone Storage access */}
+                        <input 
+                          type="file" 
+                          ref={fileInputRef} 
+                          onChange={handleCustomRingtoneChange} 
+                          accept="audio/*" 
+                          className="hidden" 
+                        />
+                      </div>
+
+                      {/* 3. Periods mapped to alarms list */}
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between pb-1 border-b border-slate-100">
+                          <h4 className="text-xs font-extrabold text-slate-600">أوقات الرنين والمزامنة اليومية</h4>
+                          <span className="text-[10px] text-slate-400">انقر لتعديل التوقيت</span>
+                        </div>
+
+                        <div className="space-y-2.5">
+                          {activeLocal.headers.map((header) => {
+                            const alarmTime = activeLocal.alarmConfig.times[header] || "12:00";
+                            
+                            // Get today's Arabic name to show subject for current day only
+                            const todayArabic = (() => {
+                              const dayIndex = new Date().getDay();
+                              const map: Record<number, string> = {
+                                0: "الأحد",
+                                1: "الاثنين",
+                                2: "الثلاثاء",
+                                3: "الأربعاء",
+                                4: "الخميس",
+                                5: "الجمعة",
+                                6: "السبت"
+                              };
+                              return map[dayIndex] || "الأحد";
+                            })();
+
+                            const todaySubject = activeLocal.grid[todayArabic]?.[header] || "";
+                            const subjectSummaryText = todaySubject 
+                              ? `${todayArabic}: ${todaySubject}`
+                              : `لا توجد مواد مجدولة اليوم (${todayArabic})`;
+
+                            return (
+                              <div 
+                                key={header}
+                                onClick={() => handleOpenTimepicker(header)}
+                                className="flex items-center justify-between p-3.5 bg-slate-50 hover:bg-slate-100 border border-slate-150 rounded-2xl cursor-pointer transition-colors"
+                              >
+                                {/* Right: Alarm time indicator */}
+                                <div className="flex items-center gap-2">
+                                  <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center">
+                                    <Clock className="w-4 h-4" />
+                                  </div>
+                                  <div className="space-y-0.5">
+                                    <span className="text-xs font-black text-slate-800 block">
+                                      {header}
+                                    </span>
+                                    <span className="text-[10px] text-slate-400 font-medium block">
+                                      {subjectSummaryText}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                {/* Left: Beautiful 12-hour display */}
+                                <span className="text-xs font-mono font-bold bg-white text-slate-700 px-3 py-1.5 rounded-lg border border-slate-200">
+                                  {formatTime12(alarmTime)}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
               </div>
 
