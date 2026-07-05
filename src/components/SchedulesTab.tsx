@@ -71,6 +71,20 @@ export default function SchedulesTab({ state, onSaveState }: SchedulesTabProps) 
   const [wheelMinute, setWheelMinute] = useState<number>(0);
   const [wheelAmPm, setWheelAmPm] = useState<'AM' | 'PM'>('PM');
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleCustomRingtoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      updateActiveLocal(prev => {
+        const copy = { ...prev };
+        copy.alarmConfig.ringtoneName = file.name;
+        return copy;
+      });
+      speakArabicText("تم اختيار نغمة مخصصة بنجاح");
+    }
+  };
+
   // Trigger default templates
   const handleLoadTemplate = () => {
     updateActiveLocal(prev => {
@@ -334,7 +348,7 @@ export default function SchedulesTab({ state, onSaveState }: SchedulesTabProps) 
 
   // Render a cell's custom CSS styling depending on schedule type
   const getCellClassName = (hasContent: boolean, isFocused: boolean) => {
-    const base = "p-3 h-16 min-w-[130px] border-b border-l border-slate-100 text-center relative group cursor-pointer transition-all flex items-center justify-center text-xs font-semibold select-none ";
+    const base = "p-1 h-14 min-w-[88px] w-[88px] max-w-[88px] border-b border-l border-slate-100 text-center relative group cursor-pointer transition-all flex flex-col items-center justify-center text-[10px] font-semibold select-none ";
     const focusRing = isFocused ? "ring-2 ring-emerald-500 ring-inset bg-emerald-50/50 " : "";
     
     if (activeTab === 'school') {
@@ -392,20 +406,15 @@ export default function SchedulesTab({ state, onSaveState }: SchedulesTabProps) 
       {/* 2. Control Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-4 bg-white border border-slate-100 rounded-2xl p-4 shadow-sm">
         
-        {/* Left Side: Instructions */}
-        <div className="flex items-center gap-2">
-          {/* Quick Keyboard Instruction Info */}
-          <div className="flex items-center gap-1.5 text-xs text-slate-600 bg-slate-50 px-3.5 py-2 rounded-xl border border-slate-100 font-bold">
-            <HelpCircle className="w-4 h-4 text-emerald-600" />
-            <span>استخدم الأسهم 🧭 و Enter للتنقل والتحرير السريع</span>
-          </div>
+        <div className="text-slate-400 text-xs font-bold font-sans">
+          تنظيم الأوقات والحصص بكل مرونة ويسر ✏️
         </div>
 
         {/* Right Side: Actions (Templates, Clear, Alarm) */}
         <div className="flex items-center gap-2 flex-wrap">
           
-          {/* Custom alarms config (Excluding School schedule) */}
-          {(activeTab === 'tutoring' || activeTab === 'study') && (
+          {/* Custom alarms config (All schedules) */}
+          {(activeTab === 'school' || activeTab === 'tutoring' || activeTab === 'study') && (
             <button
               onClick={() => setShowAlarmModal(true)}
               className={`px-4 py-2 rounded-xl flex items-center gap-1.5 text-xs font-extrabold transition-all cursor-pointer ${
@@ -415,18 +424,30 @@ export default function SchedulesTab({ state, onSaveState }: SchedulesTabProps) 
               }`}
             >
               <Bell className={`w-4 h-4 ${activeLocal.alarmConfig.enabled ? 'text-amber-500 animate-swing' : ''}`} />
-              <span>إعدادات التنبيه المالي</span>
+              <span>إعدادات التنبيه</span>
             </button>
           )}
 
-          {/* Autofill Template */}
-          <button
-            onClick={handleLoadTemplate}
-            className="px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl flex items-center gap-1.5 text-xs font-extrabold transition-colors cursor-pointer"
-          >
-            <Sparkles className="w-4 h-4" />
-            <span>نموذج تلقائي</span>
-          </button>
+          {/* Zoom +/- Controls */}
+          <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-xl p-1 font-sans text-xs">
+            <button
+              onClick={() => handleZoom('out')}
+              className="w-7 h-7 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg flex items-center justify-center text-slate-700 font-extrabold transition-colors cursor-pointer"
+              title="تصغير"
+            >
+              -
+            </button>
+            <span className="px-2 font-bold text-slate-700 min-w-[50px] text-center select-none">
+              %{activeLocal.zoomLevel || 100}
+            </span>
+            <button
+              onClick={() => handleZoom('in')}
+              className="w-7 h-7 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg flex items-center justify-center text-slate-700 font-extrabold transition-colors cursor-pointer"
+              title="تكبير"
+            >
+              +
+            </button>
+          </div>
 
           {/* Clear Grid */}
           <button
@@ -447,26 +468,27 @@ export default function SchedulesTab({ state, onSaveState }: SchedulesTabProps) 
         {/* Horizontal and Vertical Scrollable Container */}
         <div id="schedule-scroll-viewport" className="overflow-auto max-h-[500px] w-full relative">
           <table 
-            className="w-full border-separate border-spacing-0 text-sm" 
+            className="min-w-max w-full border-separate border-spacing-0 text-sm origin-top-right transition-all duration-150" 
             dir="rtl"
+            style={{ zoom: `${activeLocal.zoomLevel || 100}%` }}
           >
             {/* Header: Emerald themed */}
             <thead>
               <tr className="bg-emerald-700 text-white">
                 {/* Sticky top-right cell */}
-                <th className="p-4 text-xs font-extrabold border-l border-b border-emerald-800 text-center sticky right-0 top-0 z-30 bg-emerald-700 min-w-[100px] shadow-sm select-none">
-                  اليوم / الوقت
+                <th className="p-1 text-[10px] font-black border-l border-b border-emerald-800 text-center sticky right-0 top-0 z-40 bg-emerald-700 min-w-[48px] w-[48px] max-w-[48px] h-18 shadow-sm select-none">
+                  اليوم
                 </th>
                 {activeLocal.headers.map((header, idx) => (
                   <th 
                     key={idx} 
                     onClick={() => handleOpenEditHeader(idx, header)}
-                    className="p-4 text-xs font-black tracking-wide border-l border-b border-emerald-800 text-center cursor-pointer hover:bg-emerald-800/80 transition-colors select-none group min-w-[150px] sticky top-0 z-20 bg-emerald-700 shadow-sm"
+                    className="p-1 text-[9px] font-black tracking-tight border-l border-b border-emerald-800 text-center cursor-pointer hover:bg-emerald-800/80 transition-colors select-none group min-w-[88px] w-[88px] max-w-[88px] h-18 sticky top-0 z-20 bg-emerald-700 shadow-sm"
                     title="انقر لتعديل اسم الفترة/الوقت"
                   >
-                    <div className="flex items-center justify-center gap-1.5">
-                      <span>{header}</span>
-                      <span className="text-[10px] text-emerald-300 font-bold opacity-0 group-hover:opacity-100 transition-opacity">✏️</span>
+                    <div className="flex flex-col items-center justify-center h-full w-full leading-tight text-center px-0.5 gap-0.5">
+                      <span className="whitespace-pre-line line-clamp-2 font-black">{header}</span>
+                      <span className="text-[9px] text-emerald-300 font-bold opacity-0 group-hover:opacity-100 transition-opacity">✏️</span>
                     </div>
                   </th>
                 ))}
@@ -478,8 +500,10 @@ export default function SchedulesTab({ state, onSaveState }: SchedulesTabProps) 
               {DAYS.map((day) => (
                 <tr key={day} className="hover:bg-slate-50/30">
                   {/* Day Label column: Sticky on the right */}
-                  <td className="p-3 text-xs font-extrabold text-slate-800 bg-slate-100 border-l border-b border-slate-200 text-center sticky right-0 z-10 select-none min-w-[100px] shadow-xs">
-                    {day}
+                  <td className="p-1 text-[10px] font-extrabold text-slate-800 bg-slate-100 border-l border-b border-slate-200 text-center sticky right-0 z-10 select-none min-w-[48px] w-[48px] max-w-[48px] h-14 shadow-xs align-middle">
+                    <div className="flex items-center justify-center w-full h-full font-bold">
+                      {day}
+                    </div>
                   </td>
                   
                   {/* Cells mapping */}
@@ -496,20 +520,20 @@ export default function SchedulesTab({ state, onSaveState }: SchedulesTabProps) 
                         className={getCellClassName(!!value, isFocused)}
                       >
                         {value ? (
-                          <div className="flex flex-col items-center justify-center w-full px-1.5 leading-snug">
-                            <span className="font-bold">{value}</span>
+                          <div className="flex flex-col items-center justify-center w-full px-1 leading-tight text-center break-words max-h-full overflow-hidden">
+                            <span className="font-extrabold text-[10px] leading-tight line-clamp-2">{value}</span>
                             
                             {/* Small clear "X" button on hover */}
                             <button
                               onClick={(e) => handleClearCellSingle(day, header, e)}
-                              className="absolute top-1 left-1 w-4 h-4 bg-slate-200/90 hover:bg-rose-500 hover:text-white rounded-full flex items-center justify-center text-[9px] opacity-0 group-hover:opacity-100 transition-opacity"
+                              className="absolute top-0.5 left-0.5 w-3.5 h-3.5 bg-slate-200/90 hover:bg-rose-500 hover:text-white rounded-full flex items-center justify-center text-[8px] opacity-0 group-hover:opacity-100 transition-opacity"
                               title="تفريغ الخلية"
                             >
                               ✕
                             </button>
                           </div>
                         ) : (
-                          <span className="text-lg font-bold text-emerald-600/30 group-hover:text-emerald-600 transition-colors select-none">
+                          <span className="text-sm font-bold text-emerald-600/30 group-hover:text-emerald-600 transition-colors select-none">
                             +
                           </span>
                         )}
@@ -768,7 +792,7 @@ export default function SchedulesTab({ state, onSaveState }: SchedulesTabProps) 
                       setPasscodeError(null);
                       setPasscodeAttempt(e.target.value.replace(/\D/g, ''));
                     }}
-                    className="w-52 mx-auto tracking-[0.8em] pr-[0.8em] text-center p-3 rounded-xl border border-slate-200 text-slate-800 font-mono font-black text-xl bg-slate-50 focus:border-emerald-500 focus:bg-white focus:outline-none transition-all block"
+                    className="w-48 mx-auto tracking-[0.4em] pr-[0.4em] text-center p-3 rounded-xl border border-slate-200 text-slate-800 font-mono font-black text-xl bg-slate-50 focus:border-emerald-500 focus:bg-white focus:outline-none transition-all block"
                     placeholder="••••"
                     autoFocus
                     onKeyDown={(e) => {
@@ -839,16 +863,25 @@ export default function SchedulesTab({ state, onSaveState }: SchedulesTabProps) 
                       سيقوم التطبيق بالرنين صوتياً عند حلول أوقات الحصص ومذاكرة المواد المحددة بالجدول.
                     </span>
                   </div>
-                  <label className="relative inline-flex items-center cursor-pointer select-none">
-                    <input 
-                      type="checkbox" 
-                      checked={activeLocal.alarmConfig.enabled}
-                      onChange={handleToggleAlarmActive}
-                      className="sr-only peer" 
-                    />
-                    <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full rtl:peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
-                    <span className="mr-2.5 text-xs font-black text-slate-700">تفعيل</span>
-                  </label>
+                  <div className="flex items-center gap-3 select-none">
+                    <span className="text-xs font-black text-slate-700">تفعيل</span>
+                    <div 
+                      onClick={handleToggleAlarmActive}
+                      className={`relative w-14 h-8 rounded-full p-1 cursor-pointer transition-colors duration-300 flex items-center shadow-inner ${
+                        activeLocal.alarmConfig.enabled ? 'bg-emerald-600 justify-start' : 'bg-slate-300 justify-end'
+                      }`}
+                    >
+                      <motion.div
+                        layout
+                        className="w-6 h-6 bg-white rounded-full shadow-lg border border-slate-100"
+                        transition={{
+                          type: "spring",
+                          stiffness: 700,
+                          damping: 35
+                        }}
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 {/* 2. Audio Ringtone Selector */}
@@ -874,12 +907,7 @@ export default function SchedulesTab({ state, onSaveState }: SchedulesTabProps) 
                     </button>
                     <button
                       onClick={() => {
-                        updateActiveLocal(prev => {
-                          const copy = { ...prev };
-                          copy.alarmConfig.ringtoneName = "نغمة السنتر الهادئة";
-                          return copy;
-                        });
-                        speakArabicText("نغمة مخصصة مفعلة");
+                        fileInputRef.current?.click();
                       }}
                       className={`p-3 rounded-xl border text-center transition-all cursor-pointer ${
                         activeLocal.alarmConfig.ringtoneName !== "افتراضي"
@@ -888,8 +916,22 @@ export default function SchedulesTab({ state, onSaveState }: SchedulesTabProps) 
                       }`}
                     >
                       <span className="text-xs block">نغمة رنين مخصصة</span>
+                      {activeLocal.alarmConfig.ringtoneName !== "افتراضي" && (
+                        <span className="text-[9px] text-emerald-600 font-mono mt-1 block truncate max-w-[150px]">
+                          {activeLocal.alarmConfig.ringtoneName}
+                        </span>
+                      )}
                     </button>
                   </div>
+                  
+                  {/* Hidden File Input for Device Ringtone Storage access */}
+                  <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    onChange={handleCustomRingtoneChange} 
+                    accept="audio/*" 
+                    className="hidden" 
+                  />
                 </div>
 
                 {/* 3. Periods mapped to alarms list */}
@@ -952,7 +994,7 @@ export default function SchedulesTab({ state, onSaveState }: SchedulesTabProps) 
                   onClick={() => setShowAlarmModal(false)}
                   className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold rounded-xl transition-colors cursor-pointer text-center"
                 >
-                  تمّ، إغلاق الإعدادات والعودة للجدول
+                  غلق
                 </button>
               </div>
             </motion.div>
@@ -1008,7 +1050,7 @@ export default function SchedulesTab({ state, onSaveState }: SchedulesTabProps) 
                   <span className="text-[10px] font-bold text-slate-400 mb-1">دقيقة</span>
                   <div className="flex flex-col items-center gap-1">
                     <button 
-                      onClick={() => setWheelMinute(prev => (prev + 5) % 60)}
+                      onClick={() => setWheelMinute(prev => (prev + 1) % 60)}
                       className="p-1 text-slate-400 hover:text-slate-800 hover:bg-slate-200 rounded-full"
                     >
                       <ChevronUp className="w-5 h-5" />
@@ -1017,7 +1059,7 @@ export default function SchedulesTab({ state, onSaveState }: SchedulesTabProps) 
                       {String(wheelMinute).padStart(2, '0')}
                     </span>
                     <button 
-                      onClick={() => setWheelMinute(prev => (prev - 5 + 60) % 60)}
+                      onClick={() => setWheelMinute(prev => (prev - 1 + 60) % 60)}
                       className="p-1 text-slate-400 hover:text-slate-800 hover:bg-slate-200 rounded-full"
                     >
                       <ChevronDown className="w-5 h-5" />

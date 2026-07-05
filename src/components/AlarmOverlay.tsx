@@ -27,10 +27,16 @@ export default function AlarmOverlay({ subjectName, periodName, scheduleType, on
     };
   }, []);
 
-  const typeLabel = scheduleType === 'tutoring' ? 'جدول الدروس الخصوصية 📚' : 'جدول المذاكرة والمراجعة ✏️';
-  const typeColorClass = scheduleType === 'tutoring' 
-    ? 'text-emerald-400 bg-emerald-950/80 border-emerald-500/30' 
-    : 'text-amber-400 bg-amber-950/80 border-amber-500/30';
+  const typeLabel = scheduleType === 'school'
+    ? 'جدول المدرسة الرسمي 🏫'
+    : scheduleType === 'tutoring' 
+      ? 'جدول الدروس الخصوصية 📚' 
+      : 'جدول المذاكرة والمراجعة ✏️';
+  const typeColorClass = scheduleType === 'school'
+    ? 'text-cyan-400 bg-cyan-950/80 border-cyan-500/30'
+    : scheduleType === 'tutoring' 
+      ? 'text-emerald-400 bg-emerald-950/80 border-emerald-500/30' 
+      : 'text-amber-400 bg-amber-950/80 border-amber-500/30';
 
   return (
     <div id="alarm-overlay-container" className="fixed inset-0 bg-slate-950 flex flex-col justify-center items-center z-50 p-6 text-white font-sans text-center overflow-y-auto">

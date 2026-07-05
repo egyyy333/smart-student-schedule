@@ -113,19 +113,57 @@ export default function SettingsTab({ state, onSaveState, onLockApp }: SettingsT
   };
 
   // Backup exporter
-  const executeBackupDownload = () => {
+  const executeBackupDownload = async () => {
     try {
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state));
-      const downloadAnchor = document.createElement('a');
+      // Exclude passcode from the backup as requested (except default value "1234" can be set or stripped entirely)
+      const { passcode, ...backupData } = state;
+      const dataStr = JSON.stringify(backupData, null, 2);
       const timestamp = new Date().toISOString().split('T')[0];
-      downloadAnchor.setAttribute("href", dataStr);
-      downloadAnchor.setAttribute("download", `جدول_الطالب_الذكي_نسخة_احتياطية_${timestamp}.json`);
-      document.body.appendChild(downloadAnchor);
-      downloadAnchor.click();
-      downloadAnchor.remove();
-      speakArabicText("تم تحميل النسخة الاحتياطية بنجاح");
+      const filename = `جدول_الطالب_الذكي_نسخة_احتياطية_${timestamp}.json`;
+
+      let sharedNatively = false;
+      // If Web Share API is supported, let the user save to Google Drive, Files, or send to social apps
+      if (navigator.share) {
+        try {
+          const file = new File([dataStr], filename, { type: 'application/json' });
+          if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share({
+              files: [file],
+              title: 'نسخة احتياطية لجدول الطالب الذكي',
+              text: 'ملف البيانات الاحتياطية لتطبيق جدول الطالب الذكي',
+            });
+            sharedNatively = true;
+            speakArabicText("تم تصدير وحفظ النسخة الاحتياطية بنجاح");
+          } else {
+            // Share as text fallback
+            await navigator.share({
+              title: 'نسخة احتياطية لجدول الطالب الذكي',
+              text: dataStr
+            });
+            sharedNatively = true;
+            speakArabicText("تم تصدير البيانات بنجاح");
+          }
+        } catch (shareErr) {
+          console.warn("Native share failed, falling back to download anchor", shareErr);
+        }
+      }
+
+      if (!sharedNatively) {
+        // Safe standard web blob download (much better than data: URI inside webviews)
+        const blob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute("href", url);
+        downloadAnchor.setAttribute("download", filename);
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+        URL.revokeObjectURL(url);
+        speakArabicText("تم تحميل النسخة الاحتياطية بنجاح");
+      }
     } catch (error) {
       console.error("Backup failed", error);
+      speakArabicText("فشل تصدير النسخة الاحتياطية");
     }
   };
 
@@ -143,9 +181,15 @@ export default function SettingsTab({ state, onSaveState, onLockApp }: SettingsT
         try {
           const importedData = JSON.parse(event.target.result);
           
-          // Basic schema sanity validation
-          if (importedData.passcode && importedData.schoolSchedule && importedData.tasks) {
-            onSaveState(importedData);
+          // Basic schema sanity validation (excluding passcode since we strip it on export)
+          if (importedData.schoolSchedule || importedData.tasks || importedData.tutoringSchedule) {
+            // Merge into state while keeping the current customized passcode intact
+            const mergedData = {
+              ...state,
+              ...importedData,
+              passcode: state.passcode // Retain current password as requested
+            };
+            onSaveState(mergedData);
             speakArabicText("تم استرجاع كافة بياناتك بنجاح وبسرعة");
             alert("✅ تم استرجاع البيانات بنجاح وجاري إعادة تحميل التطبيق!");
           } else {
@@ -394,7 +438,7 @@ export default function SettingsTab({ state, onSaveState, onLockApp }: SettingsT
                       setSecurityPassError(null);
                       setSecurityPassAttempt(e.target.value.replace(/\D/g, ''));
                     }}
-                    className="w-32 mx-auto tracking-[1.5em] text-center p-3 rounded-xl border border-slate-200 text-slate-800 font-mono font-black text-xl bg-slate-50 focus:border-emerald-500 focus:bg-white focus:outline-none block"
+                    className="w-48 mx-auto tracking-[0.4em] pr-[0.4em] text-center p-3 rounded-xl border border-slate-200 text-slate-800 font-mono font-black text-xl bg-slate-50 focus:border-emerald-500 focus:bg-white focus:outline-none block"
                     placeholder="••••"
                     autoFocus
                     onKeyDown={(e) => {

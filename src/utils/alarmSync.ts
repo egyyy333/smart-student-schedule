@@ -2,7 +2,7 @@ import { registerPlugin } from '@capacitor/core';
 import { AppState } from '../types';
 import { DAYS } from '../defaultData';
 
-const AlarmPlugin = registerPlugin<any>('AlarmPlugin');
+export const AlarmPlugin = registerPlugin<any>('AlarmPlugin');
 
 export async function syncAndroidAlarms(state: AppState) {
   try {

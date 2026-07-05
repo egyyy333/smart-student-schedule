@@ -174,35 +174,10 @@ export const INITIAL_STATE: AppState = {
       }
     }
   },
-  tasks: [
-    {
-      id: "1",
-      title: "حل واجب الرياضيات (الصفحة 42)",
-      notes: "تمارين الهندسة وحساب المثلثات كاملة",
-      priority: "high",
-      dueDate: new Date(Date.now() + 86400000).toISOString().split('T')[0], // tomorrow
-      completed: false
-    },
-    {
-      id: "2",
-      title: "تحضير تجربة الكيمياء",
-      notes: "كتابة التقرير الخاص بالتفاعل الكيميائي لغدا",
-      priority: "medium",
-      dueDate: new Date(Date.now() + 86400000 * 2).toISOString().split('T')[0],
-      completed: false
-    },
-    {
-      id: "3",
-      title: "حفظ الكلمات الجديدة لغة إنجليزية",
-      notes: "الوحدة الثالثة - الكلمات والترجمات المصاحبة",
-      priority: "low",
-      dueDate: new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0],
-      completed: true
-    }
-  ],
+  tasks: [],
   studentName: "",
   enableNameCall: true,
   passcode: "1234",
-  streakCount: 5,
+  streakCount: 0,
   lastActiveDate: new Date().toISOString().split('T')[0]
 } as AppState;

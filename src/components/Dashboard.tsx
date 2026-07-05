@@ -78,7 +78,7 @@ export default function Dashboard({ state, onNavigateToTab }: DashboardProps) {
             </span>
             <div className="flex items-center gap-1.5 bg-amber-500/20 text-amber-300 px-3 py-1 rounded-full text-xs font-bold border border-amber-500/30 animate-pulse">
               <Flame className="w-4 h-4 fill-amber-500 text-amber-500" />
-              <span>{state.streakCount} أيام متتالية</span>
+              <span>{state.streakCount} أيام متتالية نشاط</span>
             </div>
           </div>
 
