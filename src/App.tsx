@@ -10,6 +10,7 @@ import SettingsTab from './components/SettingsTab';
 import { GraduationCap, Home, Calendar, CheckSquare, Settings, Lock, Flame } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { syncAndroidAlarms, AlarmPlugin } from './utils/alarmSync';
+import { Capacitor } from '@capacitor/core';
 
 const STORAGE_KEY = 'smart_student_schedule_state';
 
@@ -46,6 +47,10 @@ export default function App() {
   // 2. Lock screen verification state
   const [isUnlocked, setIsUnlocked] = useState<boolean>(false);
 
+  // 2.5. Startup initialization & native alarm launch state to prevent flash
+  const [isInitializing, setIsInitializing] = useState<boolean>(true);
+  const [isAlarmLaunchState, setIsAlarmLaunchState] = useState<boolean>(false);
+
   // 3. Tab routing state
   const [activeTab, setActiveTab] = useState<string>('dashboard');
 
@@ -58,6 +63,36 @@ export default function App() {
   } | null>(null);
 
   const [lastFiredAlarm, setLastFiredAlarm] = useState<string>('');
+
+  // 4.5. Check if native alarm is active on focus/resume to clear stale overlays
+  useEffect(() => {
+    const handleWindowFocus = async () => {
+      try {
+        if (AlarmPlugin && typeof AlarmPlugin.isAlarmActive === 'function') {
+          const res = await AlarmPlugin.isAlarmActive();
+          if (!res.isActive && activeAlarm && !activeAlarm.isTest) {
+            console.log("Native alarm service inactive. Auto clearing activeAlarm overlay.");
+            setActiveAlarm(null);
+          }
+        }
+      } catch (err) {
+        console.warn("Could not check isAlarmActive:", err);
+      }
+    };
+
+    window.addEventListener('focus', handleWindowFocus);
+    window.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        handleWindowFocus();
+      }
+    });
+
+    handleWindowFocus();
+
+    return () => {
+      window.removeEventListener('focus', handleWindowFocus);
+    };
+  }, [activeAlarm]);
 
   // 5. JavaScript Native Event Listener for lockscreen alarms
   useEffect(() => {
@@ -92,6 +127,9 @@ export default function App() {
       try {
         if (AlarmPlugin && typeof AlarmPlugin.getPendingAlarm === 'function') {
           const res = await AlarmPlugin.getPendingAlarm();
+          if (res && res.isAlarmLaunch) {
+            setIsAlarmLaunchState(true);
+          }
           if (res && res.hasPendingAlarm) {
             console.log("Found pending native alarm on startup:", res);
             setActiveAlarm({
@@ -104,11 +142,18 @@ export default function App() {
         }
       } catch (err) {
         console.warn("Failed to fetch pending alarm natively on startup:", err);
+      } finally {
+        setIsInitializing(false);
       }
     };
 
     window.addEventListener('alarmTriggered', handleNativeAlarm);
-    checkPendingAlarmOnStartup();
+    
+    if (Capacitor.isNativePlatform()) {
+      checkPendingAlarmOnStartup();
+    } else {
+      setIsInitializing(false);
+    }
 
     return () => {
       window.removeEventListener('alarmTriggered', handleNativeAlarm);
@@ -235,6 +280,14 @@ export default function App() {
     setIsUnlocked(false);
   };
 
+  if (isInitializing) {
+    return (
+      <div className="fixed inset-0 bg-slate-950 flex flex-col justify-center items-center z-[5000]">
+        <div className="w-10 h-10 rounded-full border-4 border-slate-800 border-t-emerald-500 animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div 
       className="min-h-screen bg-slate-50 flex flex-col justify-between font-sans selection:bg-emerald-200" 
@@ -267,16 +320,23 @@ export default function App() {
             scheduleType={activeAlarm.scheduleType}
             isTest={activeAlarm.isTest}
             onDismiss={async () => {
-              setActiveAlarm(null);
               try {
                 await AlarmPlugin.stopAlarm();
               } catch (e) {
                 console.warn("Native stopAlarm not available:", e);
               }
+              if (!isAlarmLaunchState) {
+                setActiveAlarm(null);
+              } else {
+                // If it was a native alarm launch, wait 1.5s as fallback,
+                // but the app finishes natively immediately, keeping screen dark!
+                setTimeout(() => {
+                  setActiveAlarm(null);
+                }, 1500);
+              }
             }}
             onSnooze={async () => {
               const currentAlarm = { ...activeAlarm };
-              setActiveAlarm(null);
               try {
                 await AlarmPlugin.snoozeAlarm({
                   subject: currentAlarm.subjectName,
@@ -286,10 +346,17 @@ export default function App() {
               } catch (e) {
                 console.warn("Native snoozeAlarm not available:", e);
               }
-              // Keep fallback setTimeout for web browser sandbox testing
-              setTimeout(() => {
-                setActiveAlarm(currentAlarm);
-              }, 600000); // 10 minutes
+              if (!isAlarmLaunchState) {
+                setActiveAlarm(null);
+                // Keep fallback setTimeout for web browser sandbox testing
+                setTimeout(() => {
+                  setActiveAlarm(currentAlarm);
+                }, 600000); // 10 minutes
+              } else {
+                setTimeout(() => {
+                  setActiveAlarm(null);
+                }, 1500);
+              }
             }}
           />
         )}
@@ -377,65 +444,75 @@ export default function App() {
             </div>
           </main>
 
-          {/* Centralized Highly Prominent Copyright Footer fixed above the navigation bar */}
-          <div className="fixed bottom-[68px] left-0 right-0 flex justify-center items-center z-20 pointer-events-none select-none">
+          {/* Centralized Bottom Container: Holds both Copyright and Floating Navigation */}
+          <div className="fixed bottom-3 left-4 right-4 z-30 max-w-xl mx-auto flex flex-col items-center gap-1.5 pointer-events-none">
+            
+            {/* Highly Prominent Copyright Footer directly above the navigation bar */}
             <div className="pointer-events-auto select-all">
-              <p className="text-[10px] md:text-xs font-bold text-slate-700 bg-white/95 backdrop-blur-xs border border-slate-200/80 shadow-md px-4 py-1 rounded-full">
+              <p className="text-[10px] md:text-xs font-extrabold text-slate-800 bg-white/95 border border-slate-200/80 shadow-md px-3 py-0.5 rounded-full">
                 بواسطة الشيخ أحمد النمس غفر الله له
               </p>
             </div>
+
+            {/* Bottom/Footer Floating Navigation Menu (Slightly Smaller & High Contrast) */}
+            <nav className="w-full bg-white border border-slate-200 shadow-xl rounded-2xl pointer-events-auto select-none">
+              <div className="px-1.5 py-1 flex justify-around gap-1">
+                
+                {/* Home Tab */}
+                <button
+                  onClick={() => setActiveTab('dashboard')}
+                  className={`flex-1 flex flex-col items-center gap-0.5 py-1 rounded-xl transition-all duration-200 cursor-pointer ${
+                    activeTab === 'dashboard' 
+                      ? 'bg-emerald-600 text-white font-black shadow-md scale-102' 
+                      : 'text-slate-800 hover:text-emerald-700 hover:bg-slate-50'
+                  }`}
+                >
+                  <Home className={`w-4.5 h-4.5 transition-colors ${activeTab === 'dashboard' ? 'text-white stroke-[2.5]' : 'text-slate-700 stroke-[2]'}`} />
+                  <span className={`text-[9px] md:text-[10px] transition-colors ${activeTab === 'dashboard' ? 'font-black' : 'font-extrabold'}`}>الرئيسية</span>
+                </button>
+
+                {/* Schedules Tab */}
+                <button
+                  onClick={() => setActiveTab('schedules')}
+                  className={`flex-1 flex flex-col items-center gap-0.5 py-1 rounded-xl transition-all duration-200 cursor-pointer ${
+                    activeTab === 'schedules' 
+                      ? 'bg-emerald-600 text-white font-black shadow-md scale-102' 
+                      : 'text-slate-800 hover:text-emerald-700 hover:bg-slate-50'
+                  }`}
+                >
+                  <Calendar className={`w-4.5 h-4.5 transition-colors ${activeTab === 'schedules' ? 'text-white stroke-[2.5]' : 'text-slate-700 stroke-[2]'}`} />
+                  <span className={`text-[9px] md:text-[10px] transition-colors ${activeTab === 'schedules' ? 'font-black' : 'font-extrabold'}`}>الجداول الثلاثة</span>
+                </button>
+
+                {/* Tasks Tab */}
+                <button
+                  onClick={() => setActiveTab('tasks')}
+                  className={`flex-1 flex flex-col items-center gap-0.5 py-1 rounded-xl transition-all duration-200 cursor-pointer ${
+                    activeTab === 'tasks' 
+                      ? 'bg-emerald-600 text-white font-black shadow-md scale-102' 
+                      : 'text-slate-800 hover:text-emerald-700 hover:bg-slate-50'
+                  }`}
+                >
+                  <CheckSquare className={`w-4.5 h-4.5 transition-colors ${activeTab === 'tasks' ? 'text-white stroke-[2.5]' : 'text-slate-700 stroke-[2]'}`} />
+                  <span className={`text-[9px] md:text-[10px] transition-colors ${activeTab === 'tasks' ? 'font-black' : 'font-extrabold'}`}>المهام والواجبات</span>
+                </button>
+
+                {/* Settings Tab */}
+                <button
+                  onClick={() => setActiveTab('settings')}
+                  className={`flex-1 flex flex-col items-center gap-0.5 py-1 rounded-xl transition-all duration-200 cursor-pointer ${
+                    activeTab === 'settings' 
+                      ? 'bg-emerald-600 text-white font-black shadow-md scale-102' 
+                      : 'text-slate-800 hover:text-emerald-700 hover:bg-slate-50'
+                  }`}
+                >
+                  <Settings className={`w-4.5 h-4.5 transition-colors ${activeTab === 'settings' ? 'text-white stroke-[2.5]' : 'text-slate-700 stroke-[2]'}`} />
+                  <span className={`text-[9px] md:text-[10px] transition-colors ${activeTab === 'settings' ? 'font-black' : 'font-extrabold'}`}>الإعدادات</span>
+                </button>
+
+              </div>
+            </nav>
           </div>
-
-          {/* Bottom/Footer Floating Navigation Menu */}
-          <nav className="fixed bottom-3 left-4 right-4 z-30 max-w-xl mx-auto bg-white/95 backdrop-blur-md border border-slate-200/80 rounded-2xl shadow-xl select-none">
-            <div className="px-4 py-1 md:py-1.5 flex justify-around">
-              
-              {/* Home Tab */}
-              <button
-                onClick={() => setActiveTab('dashboard')}
-                className={`flex flex-col items-center gap-0.5 p-1 rounded-xl transition-all cursor-pointer ${
-                  activeTab === 'dashboard' ? 'text-emerald-600 scale-105 font-bold' : 'text-slate-400 hover:text-slate-600'
-                }`}
-              >
-                <Home className="w-4.5 h-4.5" />
-                <span className="text-[9px]">الرئيسية</span>
-              </button>
-
-              {/* Schedules Tab */}
-              <button
-                onClick={() => setActiveTab('schedules')}
-                className={`flex flex-col items-center gap-0.5 p-1 rounded-xl transition-all cursor-pointer ${
-                  activeTab === 'schedules' ? 'text-emerald-600 scale-105 font-bold' : 'text-slate-400 hover:text-slate-600'
-                }`}
-              >
-                <Calendar className="w-4.5 h-4.5" />
-                <span className="text-[9px]">الجداول الثلاثة</span>
-              </button>
-
-              {/* Tasks Tab */}
-              <button
-                onClick={() => setActiveTab('tasks')}
-                className={`flex flex-col items-center gap-0.5 p-1 rounded-xl transition-all cursor-pointer ${
-                  activeTab === 'tasks' ? 'text-emerald-600 scale-105 font-bold' : 'text-slate-400 hover:text-slate-600'
-                }`}
-              >
-                <CheckSquare className="w-4.5 h-4.5" />
-                <span className="text-[9px]">المهام والواجبات</span>
-              </button>
-
-              {/* Settings Tab */}
-              <button
-                onClick={() => setActiveTab('settings')}
-                className={`flex flex-col items-center gap-0.5 p-1 rounded-xl transition-all cursor-pointer ${
-                  activeTab === 'settings' ? 'text-emerald-600 scale-105 font-bold' : 'text-slate-400 hover:text-slate-600'
-                }`}
-              >
-                <Settings className="w-4.5 h-4.5" />
-                <span className="text-[9px]">الإعدادات</span>
-              </button>
-
-            </div>
-          </nav>
         </>
       )}
 

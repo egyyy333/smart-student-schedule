@@ -541,8 +541,8 @@ export default function SchedulesTab({ state, onSaveState }: SchedulesTabProps) 
       {/* 3. The Responsive Grid Table with Sticky Headers and Sticky Day Labels */}
       <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm relative">
         
-        {/* Horizontal Scrollable Container (Natural Vertical Layout Integration) */}
-        <div id="schedule-scroll-viewport" className="overflow-x-auto overflow-y-visible w-full relative">
+        {/* Horizontal & Vertical Self-Contained Scroll Container to prevent alignment glitches */}
+        <div id="schedule-scroll-viewport" className="overflow-x-auto overflow-y-auto max-h-[440px] w-full relative">
           <table 
             className="min-w-max w-full border-separate border-spacing-0 text-sm origin-top-right transition-all duration-150" 
             dir="rtl"
@@ -551,8 +551,8 @@ export default function SchedulesTab({ state, onSaveState }: SchedulesTabProps) 
             {/* Header: Emerald themed */}
             <thead>
               <tr className="bg-emerald-700 text-white">
-                {/* Sticky top-right cell */}
-                <th className="p-1 text-[10px] font-black border-l border-b border-emerald-800 text-center sticky right-0 top-0 z-40 bg-emerald-700 min-w-[60px] w-[60px] max-w-[60px] h-14 shadow-sm select-none">
+                {/* Sticky top-right cell (both horizontal and vertical sticky relative to the card container) */}
+                <th className="p-1 text-[10px] font-black border-l border-b border-emerald-800 text-center sticky right-0 top-0 z-30 bg-emerald-700 min-w-[60px] w-[60px] max-w-[60px] h-14 shadow-sm select-none">
                   اليوم
                 </th>
                 {activeLocal.headers.map((header, idx) => (

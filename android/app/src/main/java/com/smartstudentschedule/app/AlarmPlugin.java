@@ -176,6 +176,7 @@ public class AlarmPlugin extends Plugin {
     public void getPendingAlarm(PluginCall call) {
         JSObject ret = new JSObject();
         ret.put("hasPendingAlarm", MainActivity.hasPendingAlarm);
+        ret.put("isAlarmLaunch", MainActivity.isAlarmLaunch);
         if (MainActivity.hasPendingAlarm) {
             ret.put("subject", MainActivity.pendingSubject);
             ret.put("day", MainActivity.pendingDay);
@@ -187,6 +188,13 @@ public class AlarmPlugin extends Plugin {
             MainActivity.pendingDay = null;
             MainActivity.pendingTime = null;
         }
+        call.resolve(ret);
+    }
+
+    @PluginMethod
+    public void isAlarmActive(PluginCall call) {
+        JSObject ret = new JSObject();
+        ret.put("isActive", AlarmService.activeService != null);
         call.resolve(ret);
     }
 
