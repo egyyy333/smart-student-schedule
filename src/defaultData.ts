@@ -141,7 +141,7 @@ export const INITIAL_STATE: AppState = {
     headers: DEFAULT_TUTORING_HEADERS,
     grid: createEmptyGrid(DEFAULT_TUTORING_HEADERS),
     alarmConfig: {
-      enabled: true,
+      enabled: false,
       ringtoneName: "افتراضي",
       times: {
         "الساعة 01:00 م": "13:00",
@@ -160,7 +160,7 @@ export const INITIAL_STATE: AppState = {
     headers: DEFAULT_STUDY_HEADERS,
     grid: createEmptyGrid(DEFAULT_STUDY_HEADERS),
     alarmConfig: {
-      enabled: true,
+      enabled: false,
       ringtoneName: "افتراضي",
       times: {
         "الساعة 03:00 م": "15:00",

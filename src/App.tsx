@@ -404,7 +404,7 @@ export default function App() {
           </header>
 
           {/* Core Scrollable Panel viewport */}
-          <main className="max-w-7xl mx-auto w-full px-4 py-6 flex-1 mb-36 md:mb-32 flex flex-col justify-between">
+          <main className="max-w-7xl mx-auto w-full px-4 pt-1 pb-6 flex-1 mb-36 md:mb-32 flex flex-col justify-between">
             <div className="flex-1">
               <AnimatePresence mode="wait">
                 <motion.div
@@ -481,7 +481,7 @@ export default function App() {
                   }`}
                 >
                   <Calendar className={`w-4.5 h-4.5 transition-colors ${activeTab === 'schedules' ? 'text-white stroke-[2.5]' : 'text-slate-700 stroke-[2]'}`} />
-                  <span className={`text-[9px] md:text-[10px] transition-colors ${activeTab === 'schedules' ? 'font-black' : 'font-extrabold'}`}>الجداول الثلاثة</span>
+                  <span className={`text-[9px] md:text-[10px] transition-colors ${activeTab === 'schedules' ? 'font-black' : 'font-extrabold'}`}>الجداول</span>
                 </button>
 
                 {/* Tasks Tab */}
@@ -494,7 +494,7 @@ export default function App() {
                   }`}
                 >
                   <CheckSquare className={`w-4.5 h-4.5 transition-colors ${activeTab === 'tasks' ? 'text-white stroke-[2.5]' : 'text-slate-700 stroke-[2]'}`} />
-                  <span className={`text-[9px] md:text-[10px] transition-colors ${activeTab === 'tasks' ? 'font-black' : 'font-extrabold'}`}>المهام والواجبات</span>
+                  <span className={`text-[9px] md:text-[10px] transition-colors ${activeTab === 'tasks' ? 'font-black' : 'font-extrabold'}`}>المهام</span>
                 </button>
 
                 {/* Settings Tab */}
