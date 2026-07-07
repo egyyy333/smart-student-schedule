@@ -185,7 +185,7 @@ export default function PasscodeLock({ correctPasscode, onSuccess }: PasscodeLoc
       {/* Centered Stable Copyright Footer */}
       <div className="w-full text-center mt-6 pt-4 border-t border-slate-150/60 flex justify-center items-center select-all">
         <p className="text-xs md:text-sm font-bold text-slate-700 bg-white border border-slate-200 shadow-xs px-6 py-2.5 rounded-full">
-          بواسطة الشيخ أحمد النمس غفر الله له
+          بواسطة الشيخ أحمد النمس غفر الله له ولوالديه
         </p>
       </div>
 

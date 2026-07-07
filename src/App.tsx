@@ -450,7 +450,7 @@ export default function App() {
             {/* Highly Prominent Copyright Footer directly above the navigation bar */}
             <div className="pointer-events-auto select-all">
               <p className="text-[10px] md:text-xs font-extrabold text-slate-800 bg-white/95 border border-slate-200/80 shadow-md px-3 py-0.5 rounded-full">
-                بواسطة الشيخ أحمد النمس غفر الله له
+                بواسطة الشيخ أحمد النمس غفر الله له ولوالديه
               </p>
             </div>
 

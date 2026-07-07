@@ -65,31 +65,38 @@ export default function Dashboard({ state, onNavigateToTab }: DashboardProps) {
       <motion.div 
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
-        className="relative overflow-hidden bg-slate-900 rounded-3xl p-6 md:p-8 text-white shadow-xl shadow-slate-900/10 border border-slate-800"
+        className="relative overflow-hidden bg-slate-900 rounded-3xl py-8 md:py-10 px-6 md:px-8 text-white shadow-xl shadow-slate-900/10 border border-slate-800"
       >
         {/* Background ambient accent circles */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl -mr-16 -mt-16" />
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-sky-500/10 rounded-full blur-3xl -ml-16 -mb-16" />
 
-        <div className="relative z-10 space-y-4">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 px-3 py-1 rounded-full">
+        <div className="relative z-10 space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <span className="text-xs font-semibold bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 px-3 py-1 rounded-full w-fit">
               لوحة التحكم اليومية 🗓️
             </span>
-            <div className="flex items-center gap-1.5 bg-amber-500/20 text-amber-300 px-3 py-1 rounded-full text-xs font-bold border border-amber-500/30 animate-pulse">
+            <div className="flex items-center gap-1.5 bg-amber-500/20 text-amber-300 px-3 py-1 rounded-full text-xs font-bold border border-amber-500/30 animate-pulse w-fit">
               <Flame className="w-4 h-4 fill-amber-500 text-amber-500" />
               <span>{state.streakCount} أيام متتالية نشاط</span>
             </div>
           </div>
 
-          <h1 className="text-2xl md:text-3.5xl font-black text-white leading-tight">
+          {/* Beautiful glowing centered prayer */}
+          <div className="flex justify-center py-2 select-none">
+            <span className="text-2xl md:text-3.5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-emerald-300 to-amber-100 drop-shadow-[0_0_15px_rgba(52,211,153,0.8)] tracking-widest text-center">
+              ( رَبِّ زِدْنِي عِلْمًا )
+            </span>
+          </div>
+
+          <h1 className="text-2.5xl md:text-3.5xl font-black text-white leading-tight text-center sm:text-right">
             مرحباً بك {displayName} في لوحة التحكم
           </h1>
 
-          <div className="text-slate-300 text-sm md:text-base space-y-1 font-medium max-w-2xl leading-relaxed">
+          <div className="text-slate-300 text-sm md:text-base space-y-1 font-medium max-w-2xl leading-relaxed text-center sm:text-right">
             <p>يومك مرتب ومنظم بذكاء! 🔥</p>
             <p>
-              اليوم هو <span className="text-white font-bold underline decoration-emerald-400 decoration-2 underline-offset-2">{currentArabicDay}</span>، الساعة <span className="text-amber-300 font-extrabold">{getFormattedTime12()}</span>. تصفح مواعيد حصصك ودروسك بذكاء ونفذ خطتك الدراسية.
+              اليوم هو <span className="text-white font-bold underline decoration-emerald-400 decoration-2 underline-offset-2">{currentArabicDay}</span>، الساعة <span className="text-amber-300 font-extrabold">{getFormattedTime12()}</span>.
             </p>
           </div>
         </div>

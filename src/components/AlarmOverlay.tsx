@@ -117,7 +117,7 @@ export default function AlarmOverlay({ subjectName, periodName, scheduleType, on
         {/* Highly Visible centered Copyright Badge */}
         <div className="mt-8 text-center select-all">
           <p className="text-xs md:text-sm font-bold text-slate-200 bg-slate-900 border border-slate-800/80 px-6 py-2.5 rounded-full shadow-md">
-            بواسطة الشيخ أحمد النمس غفر الله له
+            بواسطة الشيخ أحمد النمس غفر الله له ولوالديه
           </p>
         </div>
 
