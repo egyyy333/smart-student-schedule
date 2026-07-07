@@ -497,7 +497,7 @@ export default function SchedulesTab({ state, onSaveState }: SchedulesTabProps) 
                 }`}
               >
                 <Bell className={`w-4 h-4 ${activeLocal.alarmConfig.enabled ? 'text-amber-500 animate-swing' : ''}`} />
-                <span>إعدادات المنبه</span>
+                <span>إعدادات</span>
               </button>
             )}
           </div>
