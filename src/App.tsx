@@ -366,7 +366,7 @@ export default function App() {
       {isUnlocked && (
         <>
           {/* Header Bar */}
-          <header className="bg-white border-b border-slate-100 shadow-xs sticky top-0 z-40 select-none">
+          <header className="bg-white border-b border-slate-100 shadow-xs sticky top-0 z-50 select-none">
             <div className="max-w-7xl mx-auto px-4 py-3 md:py-4 flex items-center justify-between">
               
               {/* Brand Logo & Name */}

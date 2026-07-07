@@ -29,7 +29,29 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onResume() {
         super.onResume();
-        handleIntent(getIntent());
+        Intent intent = getIntent();
+        if (intent == null || !"true".equals(intent.getStringExtra("trigger_alarm_overlay"))) {
+            clearAlarmFlags();
+        }
+        handleIntent(intent);
+    }
+
+    public void clearAlarmFlags() {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+                    setShowWhenLocked(false);
+                    setTurnScreenOn(false);
+                }
+                getWindow().clearFlags(
+                    WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED |
+                    WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON |
+                    WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON |
+                    WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
+                );
+            }
+        });
     }
 
     private void handleIntent(Intent intent) {

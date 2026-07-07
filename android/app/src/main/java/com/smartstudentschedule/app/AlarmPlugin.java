@@ -168,6 +168,30 @@ public class AlarmPlugin extends Plugin {
             } catch (Exception e) {
                 e.printStackTrace();
             }
+        } else {
+            try {
+                if (getActivity() instanceof MainActivity) {
+                    ((MainActivity) getActivity()).clearAlarmFlags();
+                } else {
+                    getActivity().runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+                                getActivity().setShowWhenLocked(false);
+                                getActivity().setTurnScreenOn(false);
+                            }
+                            getActivity().getWindow().clearFlags(
+                                WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED |
+                                WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON |
+                                WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON |
+                                WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
+                            );
+                        }
+                    });
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
         call.resolve();
     }

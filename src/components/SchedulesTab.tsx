@@ -446,7 +446,7 @@ export default function SchedulesTab({ state, onSaveState }: SchedulesTabProps) 
     <div className="space-y-3 font-sans">
       
       {/* 1. Unified Sticky Header Block (Tabs + Compact Control Toolbar) */}
-      <div className="sticky top-[61px] md:top-[69px] z-30 bg-slate-50/95 backdrop-blur-md pt-1 pb-1.5 space-y-1.5 max-w-xl mx-auto w-full select-none">
+      <div className="sticky top-[61px] md:top-[69px] z-40 bg-slate-50/95 backdrop-blur-md pt-1 pb-1.5 space-y-1.5 max-w-xl mx-auto w-full select-none">
         
         {/* Switching Tabs - Very Compact */}
         <div className="flex bg-white p-1 rounded-2xl border border-slate-150 shadow-xs">
@@ -555,14 +555,14 @@ export default function SchedulesTab({ state, onSaveState }: SchedulesTabProps) 
             <thead>
               <tr className="bg-emerald-700 text-white">
                 {/* Sticky top-right cell (both horizontal and vertical sticky relative to the card container) */}
-                <th className="p-1 text-[10px] font-black border-l border-b border-emerald-800 text-center sticky right-0 top-0 z-30 bg-emerald-700 min-w-[60px] w-[60px] max-w-[60px] h-14 shadow-sm select-none">
+                <th className="p-1 text-[10px] font-black border-l border-b border-emerald-800 text-center sticky right-0 top-0 z-25 bg-emerald-700 min-w-[60px] w-[60px] max-w-[60px] h-14 shadow-sm select-none">
                   اليوم
                 </th>
                 {activeLocal.headers.map((header, idx) => (
                   <th 
                     key={idx} 
                     onClick={() => handleOpenEditHeader(idx, header)}
-                    className="p-1 text-[9px] font-black tracking-tight border-l border-b border-emerald-800 text-center cursor-pointer hover:bg-emerald-800/80 transition-colors select-none group min-w-[84px] w-[84px] max-w-[84px] h-14 sticky top-0 z-20 bg-emerald-700 shadow-sm"
+                    className="p-1 text-[9px] font-black tracking-tight border-l border-b border-emerald-800 text-center cursor-pointer hover:bg-emerald-800/80 transition-colors select-none group min-w-[84px] w-[84px] max-w-[84px] h-14 sticky top-0 z-15 bg-emerald-700 shadow-sm"
                     title="انقر لتعديل اسم الفترة/الوقت"
                   >
                     <div className="flex flex-col items-center justify-center h-full w-full leading-tight text-center px-0.5 gap-0.5">
