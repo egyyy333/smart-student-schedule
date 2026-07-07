@@ -29,11 +29,10 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onResume() {
         super.onResume();
-        Intent intent = getIntent();
-        if (intent == null || !"true".equals(intent.getStringExtra("trigger_alarm_overlay"))) {
+        if (AlarmService.activeService == null) {
             clearAlarmFlags();
         }
-        handleIntent(intent);
+        handleIntent(getIntent());
     }
 
     public void clearAlarmFlags() {
@@ -80,6 +79,10 @@ public class MainActivity extends BridgeActivity {
             
             // Clear the trigger so it doesn't fire repeatedly
             intent.removeExtra("trigger_alarm_overlay");
+            Intent mainIntent = getIntent();
+            if (mainIntent != null) {
+                mainIntent.removeExtra("trigger_alarm_overlay");
+            }
             
             // Dispatch JS event to our React web application
             final String textEscaped = text != null ? text.replace("\"", "\\\"") : "";

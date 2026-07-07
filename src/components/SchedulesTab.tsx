@@ -443,18 +443,18 @@ export default function SchedulesTab({ state, onSaveState }: SchedulesTabProps) 
   };
 
   return (
-    <div className="space-y-3 font-sans">
+    <div className="space-y-1.5 font-sans">
       
       {/* 1. Unified Sticky Header Block (Tabs + Compact Control Toolbar) */}
-      <div className="sticky top-[61px] md:top-[69px] z-40 bg-slate-50/95 backdrop-blur-md pt-1 pb-1.5 space-y-1.5 max-w-xl mx-auto w-full select-none">
+      <div className="sticky top-[59px] md:top-[67px] z-40 bg-slate-50 pt-0.5 pb-1 space-y-1 max-w-xl mx-auto w-full select-none">
         
         {/* Switching Tabs - Very Compact */}
-        <div className="flex bg-white p-1 rounded-2xl border border-slate-150 shadow-xs">
+        <div className="flex bg-white p-0.5 rounded-xl border border-slate-150 shadow-xs">
           <button
             onClick={() => setActiveTab('school')}
-            className={`flex-1 py-2 text-xs md:text-sm font-extrabold rounded-xl transition-all cursor-pointer ${
+            className={`flex-1 py-1 text-[11px] md:text-xs font-extrabold rounded-lg transition-all cursor-pointer ${
               activeTab === 'school' 
-                ? 'bg-emerald-600 text-white shadow-md' 
+                ? 'bg-emerald-600 text-white shadow-xs' 
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
             }`}
           >
@@ -462,9 +462,9 @@ export default function SchedulesTab({ state, onSaveState }: SchedulesTabProps) 
           </button>
           <button
             onClick={() => setActiveTab('tutoring')}
-            className={`flex-1 py-2 text-xs md:text-sm font-extrabold rounded-xl transition-all cursor-pointer ${
+            className={`flex-1 py-1 text-[11px] md:text-xs font-extrabold rounded-lg transition-all cursor-pointer ${
               activeTab === 'tutoring' 
-                ? 'bg-emerald-600 text-white shadow-md' 
+                ? 'bg-emerald-600 text-white shadow-xs' 
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
             }`}
           >
@@ -472,9 +472,9 @@ export default function SchedulesTab({ state, onSaveState }: SchedulesTabProps) 
           </button>
           <button
             onClick={() => setActiveTab('study')}
-            className={`flex-1 py-2 text-xs md:text-sm font-extrabold rounded-xl transition-all cursor-pointer ${
+            className={`flex-1 py-1 text-[11px] md:text-xs font-extrabold rounded-lg transition-all cursor-pointer ${
               activeTab === 'study' 
-                ? 'bg-emerald-600 text-white shadow-md' 
+                ? 'bg-emerald-600 text-white shadow-xs' 
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
             }`}
           >
@@ -482,59 +482,58 @@ export default function SchedulesTab({ state, onSaveState }: SchedulesTabProps) 
           </button>
         </div>
 
-        {/* 2. Control Toolbar - Shrunk Vertically as requested */}
-        <div className="flex items-center justify-between gap-3 bg-white border border-slate-200 rounded-2xl p-1.5 px-3 shadow-xs">
+        {/* 2. Control Toolbar - Shrunk Vertically & Zoom Centered to avoid touch collision */}
+        <div className="grid grid-cols-3 items-center gap-2 bg-white border border-slate-150 rounded-xl p-1 px-2 shadow-xs">
           
-          {/* Left Side: Alarm config */}
-          <div>
+          {/* Column 1: Alarm config (Left) */}
+          <div className="flex justify-start">
             {(activeTab === 'school' || activeTab === 'tutoring' || activeTab === 'study') && (
               <button
                 onClick={() => setShowAlarmModal(true)}
-                className={`px-3 py-1.5 rounded-xl flex items-center gap-1.5 text-xs font-extrabold transition-all cursor-pointer ${
+                className={`px-2 py-1 rounded-lg flex items-center gap-1 text-[10px] font-extrabold transition-all cursor-pointer whitespace-nowrap ${
                   activeLocal.alarmConfig.enabled 
-                    ? 'bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 shadow-sm' 
-                    : 'bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200'
+                    ? 'bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 shadow-xs' 
+                    : 'bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-150'
                 }`}
               >
-                <Bell className={`w-3.5 h-3.5 ${activeLocal.alarmConfig.enabled ? 'text-amber-500 animate-swing' : ''}`} />
+                <Bell className={`w-3 h-3 ${activeLocal.alarmConfig.enabled ? 'text-amber-500 animate-swing' : ''}`} />
                 <span>إعدادات المنبه</span>
               </button>
             )}
           </div>
 
-          {/* Right Side: Zoom and Clear actions */}
-          <div className="flex items-center gap-2">
-            
-            {/* Zoom Controls */}
-            <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-xl p-0.5 font-sans text-[10px]">
+          {/* Column 2: Zoom Controls (Centered perfectly) */}
+          <div className="flex justify-center">
+            <div className="flex items-center gap-0.5 bg-slate-50 border border-slate-150 rounded-lg p-0.5 font-sans text-[9px]">
               <button
                 onClick={() => handleZoom('out')}
-                className="w-6 h-6 bg-white hover:bg-slate-100 border border-slate-150 rounded-lg flex items-center justify-center text-slate-700 font-extrabold transition-colors cursor-pointer"
+                className="w-5.5 h-5.5 bg-white hover:bg-slate-100 border border-slate-150 rounded-md flex items-center justify-center text-slate-700 font-extrabold transition-colors cursor-pointer text-[10px]"
                 title="تصغير"
               >
                 -
               </button>
-              <span className="px-1.5 font-bold text-slate-700 min-w-[36px] text-center select-none text-[10px]">
+              <span className="px-1 font-bold text-slate-700 min-w-[28px] text-center select-none text-[9px]">
                 %{activeLocal.zoomLevel || 100}
               </span>
               <button
                 onClick={() => handleZoom('in')}
-                className="w-6 h-6 bg-white hover:bg-slate-100 border border-slate-150 rounded-lg flex items-center justify-center text-slate-700 font-extrabold transition-colors cursor-pointer"
+                className="w-5.5 h-5.5 bg-white hover:bg-slate-100 border border-slate-150 rounded-md flex items-center justify-center text-slate-700 font-extrabold transition-colors cursor-pointer text-[10px]"
                 title="تكبير"
               >
                 +
               </button>
             </div>
+          </div>
 
-            {/* Clear Grid */}
+          {/* Column 3: Clear Grid (Right) */}
+          <div className="flex justify-end">
             <button
               onClick={() => setShowClearConfirm(true)}
-              className="w-7 h-7 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-lg flex items-center justify-center transition-colors cursor-pointer"
+              className="w-5.5 h-5.5 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-150 rounded-md flex items-center justify-center transition-colors cursor-pointer"
               title="مسح كامل الجدول"
             >
-              <Trash2 className="w-3.5 h-3.5" />
+              <Trash2 className="w-3 h-3" />
             </button>
-
           </div>
 
         </div>
@@ -542,7 +541,7 @@ export default function SchedulesTab({ state, onSaveState }: SchedulesTabProps) 
       </div>
 
       {/* 3. The Responsive Grid Table with Sticky Headers and Sticky Day Labels */}
-      <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm relative">
+      <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm relative z-10">
         
         {/* Horizontal & Vertical Self-Contained Scroll Container to prevent alignment glitches (increased max-h to display all days) */}
         <div id="schedule-scroll-viewport" className="overflow-x-auto overflow-y-auto max-h-[580px] w-full relative">
