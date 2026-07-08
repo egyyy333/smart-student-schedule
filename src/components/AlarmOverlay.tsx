@@ -44,7 +44,7 @@ export default function AlarmOverlay({ subjectName, periodName, scheduleType, on
       : 'text-amber-400 bg-amber-950/80 border-amber-500/30';
 
   return (
-    <div id="alarm-overlay-container" className="fixed inset-0 bg-slate-950 flex flex-col justify-center items-center z-[1000] p-6 text-white font-sans text-center overflow-y-auto">
+    <div id="alarm-overlay-container" className="fixed inset-0 bg-slate-950 flex flex-col items-center z-[1000] p-4 md:p-6 text-white font-sans text-center overflow-y-auto">
       
       {/* Dynamic particles in background */}
       <div className="absolute inset-0 opacity-10 pointer-events-none overflow-hidden">
@@ -52,7 +52,7 @@ export default function AlarmOverlay({ subjectName, periodName, scheduleType, on
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-sky-500 rounded-full blur-3xl animate-pulse delay-1000" />
       </div>
 
-      <div className="my-auto flex flex-col items-center relative z-10 w-full max-w-md">
+      <div className="my-auto py-6 flex flex-col items-center relative z-10 w-full max-w-md">
         {/* Pulsating Ringing Icon */}
         <motion.div
           animate={{

@@ -66,10 +66,10 @@ export default function PasscodeLock({ correctPasscode, onSuccess }: PasscodeLoc
   }, [code, isError]);
 
   return (
-    <div id="passcode-container" className="fixed inset-0 bg-slate-50 flex flex-col justify-between items-center z-50 p-6 md:p-8 select-none font-sans overflow-y-auto">
+    <div id="passcode-container" className="fixed inset-0 bg-slate-50 flex flex-col items-center z-50 p-4 md:p-8 select-none font-sans overflow-y-auto">
       
       {/* Upper Brand & Numeric Grid Content Area */}
-      <div className="w-full max-w-3xl flex flex-col md:flex-row justify-center items-center gap-8 md:gap-16 my-auto">
+      <div className="w-full max-w-3xl flex flex-col md:flex-row justify-center items-center gap-6 md:gap-16 my-auto py-4">
         
         {/* Left/Top Column: Brand Info & Dots */}
         <div className="flex flex-col items-center text-center max-w-xs">

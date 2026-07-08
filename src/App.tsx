@@ -404,7 +404,7 @@ export default function App() {
           </header>
 
           {/* Core Scrollable Panel viewport */}
-          <main className="max-w-7xl mx-auto w-full px-4 pt-1 pb-6 flex-1 mb-36 md:mb-32 flex flex-col justify-between">
+          <main className="max-w-7xl mx-auto w-full px-4 pt-1 pb-6 flex-1 mb-36 md:mb-32 flex flex-col">
             <div className="flex-1">
               <AnimatePresence mode="wait">
                 <motion.div

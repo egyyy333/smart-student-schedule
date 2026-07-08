@@ -73,6 +73,53 @@ public class AlarmPlugin extends Plugin {
     }
 
     @PluginMethod
+    public void importBackup(PluginCall call) {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("*/*");
+        startActivityForResult(call, intent, "loadFileResult");
+    }
+
+    @ActivityCallback
+    private void loadFileResult(PluginCall call, ActivityResult result) {
+        if (call == null) return;
+        if (result.getResultCode() == android.app.Activity.RESULT_OK) {
+            Intent intent = result.getData();
+            if (intent != null && intent.getData() != null) {
+                android.net.Uri uri = intent.getData();
+                try {
+                    android.os.ParcelFileDescriptor pfd = getContext().getContentResolver().openFileDescriptor(uri, "r");
+                    if (pfd != null) {
+                        java.io.FileInputStream fileInputStream = new java.io.FileInputStream(pfd.getFileDescriptor());
+                        java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(fileInputStream, "UTF-8"));
+                        StringBuilder stringBuilder = new StringBuilder();
+                        String line;
+                        while ((line = reader.readLine()) != null) {
+                            stringBuilder.append(line);
+                        }
+                        reader.close();
+                        fileInputStream.close();
+                        pfd.close();
+
+                        JSObject res = new JSObject();
+                        res.put("success", true);
+                        res.put("data", stringBuilder.toString());
+                        call.resolve(res);
+                        return;
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    call.reject("Error reading file: " + e.getMessage());
+                    return;
+                }
+            }
+            call.reject("Failed to obtain file path");
+        } else {
+            call.reject("User cancelled the operation");
+        }
+    }
+
+    @PluginMethod
     public void setAlarms(PluginCall call) {
         JSArray alarms = call.getArray("alarms");
         if (alarms == null) {

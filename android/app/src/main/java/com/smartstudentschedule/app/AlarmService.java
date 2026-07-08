@@ -110,15 +110,25 @@ public class AlarmService extends Service {
             .setContentIntent(pendingIntent)
             .build();
 
-        startForeground(999, notification);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            startForeground(999, notification, android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);
+        } else {
+            startForeground(999, notification);
+        }
 
         startRinging();
 
         // Auto-launch MainActivity
-        try {
-            startActivity(activityIntent);
-        } catch (Exception e) {
-            e.printStackTrace();
+        // Only trigger manual background startActivity on older Android versions (pre-Android 10),
+        // because on Android 10+ (including Android 14/15), manual background activity launches are strictly
+        // blocked and penalized with severe delays. Instead, Android's official setFullScreenIntent() (configured above)
+        // is designed to wake the screen and display the overlay activity instantly and cleanly.
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            try {
+                startActivity(activityIntent);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
 
         return START_NOT_STICKY;

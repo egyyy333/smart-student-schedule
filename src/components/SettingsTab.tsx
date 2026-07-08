@@ -182,40 +182,66 @@ export default function SettingsTab({ state, onSaveState, onLockApp }: SettingsT
   };
 
   // Restore importer
-  const triggerRestoreUpload = () => {
-    const fileInput = document.createElement('input');
-    fileInput.type = 'file';
-    fileInput.accept = '.json';
-    fileInput.onchange = (e: any) => {
-      const file = e.target.files[0];
-      if (!file) return;
+  const triggerRestoreUpload = async () => {
+    let rawTextData = '';
 
-      const reader = new FileReader();
-      reader.onload = (event: any) => {
-        try {
-          const importedData = JSON.parse(event.target.result);
-          
-          // Basic schema sanity validation (excluding passcode since we strip it on export)
-          if (importedData.schoolSchedule || importedData.tasks || importedData.tutoringSchedule) {
-            // Merge into state while keeping the current customized passcode intact
-            const mergedData = {
-              ...state,
-              ...importedData,
-              passcode: state.passcode // Retain current password as requested
-            };
-            onSaveState(mergedData);
-            speakArabicText("تم استرجاع كافة بياناتك بنجاح وبسرعة");
-            alert("✅ تم استرجاع البيانات بنجاح وجاري إعادة تحميل التطبيق!");
-          } else {
-            alert("❌ الملف المختار لا يتوافق مع بنية بيانات جدول الطالب الذكي.");
-          }
-        } catch (err) {
-          alert("❌ فشل قراءة أو تحليل ملف البيانات المستورد.");
+    if (Capacitor.isNativePlatform()) {
+      try {
+        const { AlarmPlugin } = await import('../utils/alarmSync');
+        const res = await AlarmPlugin.importBackup();
+        if (res && res.success && res.data) {
+          rawTextData = res.data;
+        } else {
+          return; // User cancelled or failed
         }
+      } catch (err) {
+        console.warn("Native import failed, trying fallback Web input:", err);
+      }
+    }
+
+    if (rawTextData) {
+      processImportedJson(rawTextData);
+    } else {
+      // Fallback: standard web file input
+      const fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      // Use both MIME types and file extensions to ensure maximum compatibility across older system WebViews
+      fileInput.accept = 'application/json,text/plain,.json';
+      fileInput.onchange = (e: any) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event: any) => {
+          processImportedJson(event.target.result);
+        };
+        reader.readAsText(file);
       };
-      reader.readAsText(file);
-    };
-    fileInput.click();
+      fileInput.click();
+    }
+  };
+
+  const processImportedJson = (jsonString: string) => {
+    try {
+      const importedData = JSON.parse(jsonString);
+      
+      // Basic schema sanity validation (excluding passcode since we strip it on export)
+      if (importedData.schoolSchedule || importedData.tasks || importedData.tutoringSchedule) {
+        // Merge into state while keeping the current customized passcode intact
+        const mergedData = {
+          ...state,
+          ...importedData,
+          passcode: state.passcode // Retain current password as requested
+        };
+        onSaveState(mergedData);
+        speakArabicText("تم استرجاع كافة بياناتك بنجاح وبسرعة");
+        alert("✅ تم استرجاع البيانات بنجاح وجاري إعادة تحميل التطبيق!");
+      } else {
+        alert("❌ الملف المختار لا يتوافق مع بنية بيانات جدول الطالب الذكي.");
+      }
+    } catch (err) {
+      alert("❌ فشل قراءة أو تحليل ملف البيانات المستورد.");
+    }
   };
 
   // Factory reset executor
