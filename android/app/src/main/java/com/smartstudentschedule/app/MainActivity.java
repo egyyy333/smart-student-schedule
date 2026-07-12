@@ -1,5 +1,7 @@
 package com.smartstudentschedule.app;
 
+import android.app.KeyguardManager;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
@@ -16,13 +18,46 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(AlarmPlugin.class);
+        
+        // Handle lockscreen flags as early as possible in onCreate
+        Intent intent = getIntent();
+        if (intent != null && "true".equals(intent.getStringExtra("trigger_alarm_overlay"))) {
+            applyLockscreenFlags();
+        }
+        
         super.onCreate(savedInstanceState);
+    }
+
+    private void applyLockscreenFlags() {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+                    setShowWhenLocked(true);
+                    setTurnScreenOn(true);
+                    KeyguardManager keyguardManager = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
+                    if (keyguardManager != null) {
+                        keyguardManager.requestDismissKeyguard(MainActivity.this, null);
+                    }
+                }
+                getWindow().addFlags(
+                    WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED |
+                    WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD |
+                    WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON |
+                    WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON |
+                    WindowManager.LayoutParams.FLAG_ALLOW_LOCK_WHILE_SCREEN_ON
+                );
+            }
+        });
     }
 
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
+        if (intent != null && "true".equals(intent.getStringExtra("trigger_alarm_overlay"))) {
+            applyLockscreenFlags();
+        }
         handleIntent(intent);
     }
 
@@ -31,6 +66,9 @@ public class MainActivity extends BridgeActivity {
         super.onResume();
         if (AlarmService.activeService == null) {
             clearAlarmFlags();
+        } else {
+            // Re-apply flags if alarm is active to make sure it shows over lock screen
+            applyLockscreenFlags();
         }
         handleIntent(getIntent());
     }
@@ -47,7 +85,8 @@ public class MainActivity extends BridgeActivity {
                     WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED |
                     WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON |
                     WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON |
-                    WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
+                    WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD |
+                    WindowManager.LayoutParams.FLAG_ALLOW_LOCK_WHILE_SCREEN_ON
                 );
             }
         });
@@ -55,17 +94,7 @@ public class MainActivity extends BridgeActivity {
 
     private void handleIntent(Intent intent) {
         if (intent != null && "true".equals(intent.getStringExtra("trigger_alarm_overlay"))) {
-            // Wake screen and show over lock screen
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
-                setShowWhenLocked(true);
-                setTurnScreenOn(true);
-            }
-            getWindow().addFlags(
-                WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED |
-                WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON |
-                WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON |
-                WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
-            );
+            applyLockscreenFlags();
 
             String text = intent.getStringExtra("appointment_text");
             String day = intent.getStringExtra("appointment_day");

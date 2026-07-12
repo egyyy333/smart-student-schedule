@@ -38,7 +38,9 @@ public class AlarmService extends Service {
         try {
             PowerManager powerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
             wakeLock = powerManager.newWakeLock(
-                PowerManager.PARTIAL_WAKE_LOCK,
+                PowerManager.FULL_WAKE_LOCK |
+                PowerManager.ACQUIRE_CAUSES_WAKEUP |
+                PowerManager.ON_AFTER_RELEASE,
                 "SmartSchedule::AlarmServiceWakeLock"
             );
             wakeLock.acquire(10 * 60 * 1000L); // 10 minutes max
@@ -119,16 +121,10 @@ public class AlarmService extends Service {
         startRinging();
 
         // Auto-launch MainActivity
-        // Only trigger manual background startActivity on older Android versions (pre-Android 10),
-        // because on Android 10+ (including Android 14/15), manual background activity launches are strictly
-        // blocked and penalized with severe delays. Instead, Android's official setFullScreenIntent() (configured above)
-        // is designed to wake the screen and display the overlay activity instantly and cleanly.
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
-            try {
-                startActivity(activityIntent);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+        try {
+            startActivity(activityIntent);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
         return START_NOT_STICKY;

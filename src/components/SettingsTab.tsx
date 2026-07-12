@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { 
   User, Lock, Key, Database, Download, Upload, Trash2, RefreshCw, Check, AlertTriangle, ShieldCheck 
@@ -7,6 +7,7 @@ import { AppState } from '../types';
 import { INITIAL_STATE } from '../defaultData';
 import { speakArabicText } from '../audioHelper';
 import { motion, AnimatePresence } from 'motion/react';
+import { AlarmPlugin } from '../utils/alarmSync';
 
 interface SettingsTabProps {
   state: AppState;
@@ -17,6 +18,99 @@ interface SettingsTabProps {
 export default function SettingsTab({ state, onSaveState, onLockApp }: SettingsTabProps) {
   // 1. Name Profile States
   const [localName, setLocalName] = useState<string>(state.studentName);
+
+  // Android Permissions & Testing States
+  const [hasNotificationPermission, setHasNotificationPermission] = useState<boolean>(true);
+  const [hasOverlayPermission, setHasOverlayPermission] = useState<boolean>(true);
+  const [isAndroidPlatform, setIsAndroidPlatform] = useState<boolean>(false);
+  const [testCountdown, setTestCountdown] = useState<number | null>(null);
+
+  // Check Android permissions on mount or visibility change
+  useEffect(() => {
+    const checkPermissions = async () => {
+      const isNative = Capacitor.isNativePlatform();
+      setIsAndroidPlatform(isNative);
+      if (isNative) {
+        try {
+          if (AlarmPlugin && typeof AlarmPlugin.checkOverlayPermission === 'function') {
+            const overlayRes = await AlarmPlugin.checkOverlayPermission();
+            setHasOverlayPermission(!!overlayRes.hasPermission);
+          }
+          if (AlarmPlugin && typeof AlarmPlugin.checkNotificationPermission === 'function') {
+            const notifyRes = await AlarmPlugin.checkNotificationPermission();
+            setHasNotificationPermission(!!notifyRes.hasPermission);
+          }
+        } catch (e) {
+          console.warn("Error checking native permissions:", e);
+        }
+      }
+    };
+
+    checkPermissions();
+
+    const handleFocus = () => {
+      checkPermissions();
+    };
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('visibilitychange', handleFocus);
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('visibilitychange', handleFocus);
+    };
+  }, []);
+
+  const handleRequestNotificationPermission = async () => {
+    try {
+      if (AlarmPlugin && typeof AlarmPlugin.requestNotificationPermission === 'function') {
+        await AlarmPlugin.requestNotificationPermission();
+        speakArabicText("يرجى الموافقة على صلاحية الإشعارات");
+        setTimeout(async () => {
+          const notifyRes = await AlarmPlugin.checkNotificationPermission();
+          setHasNotificationPermission(!!notifyRes.hasPermission);
+        }, 1500);
+      }
+    } catch (e) {
+      console.warn("Failed to request notification permission:", e);
+    }
+  };
+
+  const handleRequestOverlayPermission = async () => {
+    try {
+      if (AlarmPlugin && typeof AlarmPlugin.requestOverlayPermission === 'function') {
+        await AlarmPlugin.requestOverlayPermission();
+        speakArabicText("يرجى تفعيل خيار الظهور فوق التطبيقات لجدول الطالب الذكي");
+      }
+    } catch (e) {
+      console.warn("Failed to request overlay permission:", e);
+    }
+  };
+
+  const handleTriggerTestAlarm = async () => {
+    try {
+      if (AlarmPlugin && typeof AlarmPlugin.triggerTestAlarm === 'function') {
+        await AlarmPlugin.triggerTestAlarm();
+        speakArabicText("جاري جدولة منبه تجريبي بعد خمس ثوان. قم بقفل شاشة هاتفك الآن لتجربته!");
+        
+        // Start a visual countdown
+        setTestCountdown(5);
+        const timer = setInterval(() => {
+          setTestCountdown((prev) => {
+            if (prev === null || prev <= 1) {
+              clearInterval(timer);
+              return null;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+      } else {
+        // Fallback for non-native / web simulation
+        speakArabicText("تجربة المنبه غير متاحة على المتصفح العادي");
+        alert("⚠️ هذه الميزة متاحة فقط على الهواتف والأجهزة الذكية بنظام أندرويد.");
+      }
+    } catch (e) {
+      console.warn("Failed to trigger test alarm:", e);
+    }
+  };
 
   // 2. Passcode Update States
   const [currentPass, setCurrentPass] = useState<string>('');
@@ -263,6 +357,95 @@ export default function SettingsTab({ state, onSaveState, onLockApp }: SettingsT
         <p className="text-xs text-slate-400 font-medium">
           تخصيص الإعدادات وتعديل كلمة المرور وإدارة النسخ الاحتياطي والذاكرة
         </p>
+      </div>
+
+      {/* 1.5. Android Permissions & Alarm Testing (Native & Simulation Section) */}
+      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 text-white space-y-4 shadow-xl text-right">
+        <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
+          <div className="w-8 h-8 rounded-lg bg-emerald-950 text-emerald-400 flex items-center justify-center">
+            <ShieldCheck className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="text-sm font-black text-white">إعدادات صلاحيات المنبه وهواتف الأندرويد 📱</h3>
+            <p className="text-[10px] text-slate-400 font-medium">لضمان عمل شاشة التنبيه ورنين الصوت بنجاح حتى لو كانت شاشة الهاتف مغلقة والتطبيق مغلقاً</p>
+          </div>
+        </div>
+
+        {!isAndroidPlatform && (
+          <div className="bg-amber-950/40 border border-amber-500/20 rounded-2xl p-3 text-[11px] font-bold text-amber-400 leading-relaxed text-center">
+            ⚠️ وضع المحاكاة: الصلاحيات مفعلة تلقائياً في المتصفح. عند تثبيت التطبيق بصيغة APK على هاتف أندرويد، ستتمكن من التحكم الفعلي بالصلاحيات هنا.
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Status indicators */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-3 bg-slate-950 rounded-2xl border border-slate-850">
+              <span className="text-xs font-bold text-slate-300">صلاحية إرسال الإشعارات (رنين الصوت)</span>
+              {(!isAndroidPlatform || hasNotificationPermission) ? (
+                <span className="px-2.5 py-1 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-500/20 text-[10px] font-black">مفعلة ✅</span>
+              ) : (
+                <button
+                  onClick={handleRequestNotificationPermission}
+                  className="px-2.5 py-1 rounded-full bg-rose-950 text-rose-400 border border-rose-500/20 text-[10px] font-black cursor-pointer hover:bg-rose-900 transition-colors"
+                >
+                  غير مفعلة (اضغط للتفعيل ⚠️)
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between p-3 bg-slate-950 rounded-2xl border border-slate-850">
+              <span className="text-xs font-bold text-slate-300">صلاحية الظهور فوق التطبيقات (شاشة التنبيه)</span>
+              {(!isAndroidPlatform || hasOverlayPermission) ? (
+                <span className="px-2.5 py-1 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-500/20 text-[10px] font-black">مفعلة ✅</span>
+              ) : (
+                <button
+                  onClick={handleRequestOverlayPermission}
+                  className="px-2.5 py-1 rounded-full bg-rose-950 text-rose-400 border border-rose-500/20 text-[10px] font-black cursor-pointer hover:bg-rose-900 transition-colors"
+                >
+                  غير مفعلة (اضغط للتفعيل ⚠️)
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Test Alarm Trigger */}
+          <div className="bg-slate-950 p-4 rounded-2xl border border-slate-850 flex flex-col justify-between gap-3">
+            <div>
+              <h4 className="text-xs font-extrabold text-slate-200">تجربة واختبار نظام التنبيه الذكي ⚡</h4>
+              <p className="text-[10px] text-slate-400 font-medium leading-relaxed mt-1">
+                اضغط على الزر أدناه، ثم قم بقفل شاشة هاتفك فوراً. بعد 5 ثوانٍ، سيقوم الهاتف بالرنين وفتح شاشة التنبيه مباشرة لتجربتها والتأكد من نجاحها!
+              </p>
+            </div>
+
+            <button
+              disabled={testCountdown !== null}
+              onClick={handleTriggerTestAlarm}
+              className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 text-white font-black text-xs rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${testCountdown !== null ? 'animate-spin' : ''}`} />
+              <span>
+                {testCountdown !== null 
+                  ? `جاري بدء التجربة خلال ${testCountdown} ثوانٍ... قفل الشاشة الآن! 🔒` 
+                  : "بدء تجربة المنبه الذكي (خلال 5 ثوانٍ)"}
+              </span>
+            </button>
+          </div>
+        </div>
+
+        {/* Device specific help block */}
+        <div className="bg-emerald-950/20 border border-emerald-500/10 rounded-2xl p-4 text-xs font-medium text-emerald-400/90 leading-relaxed space-y-1.5">
+          <p className="font-extrabold text-emerald-300">💡 تعليمات هامة لهواتف الأندرويد الخاصة بالشركات (شاومي، هواوي، سامسونج، أوبو):</p>
+          <p className="text-[11px] leading-relaxed text-emerald-400/80">
+            لأن بعض الهواتف تمنع التطبيقات من الاستيقاظ في الخلفية افتراضياً، يرجى القيام بالخطوات التالية لضمان عمل المنبه بنسبة 100%:
+          </p>
+          <ul className="list-disc list-inside text-[11px] space-y-1 text-slate-300 mr-2">
+            <li>ادخل إلى <strong>إعدادات الهاتف</strong> ➜ <strong>التطبيقات</strong> ➜ <strong>إدارة التطبيقات</strong> ➜ اختر <strong>جدول الطالب الذكي</strong>.</li>
+            <li>قم بتفعيل خيار <strong>التشغيل التلقائي (Auto-start)</strong>.</li>
+            <li>ادخل إلى <strong>صلاحيات أخرى (Other permissions)</strong> وقم بتفعيل خيار <strong>عرض على شاشة القفل (Show on lock screen)</strong> وخيار <strong>عرض نوافذ منبثقة أثناء التشغيل في الخلفية (Display pop-up windows in background)</strong>.</li>
+            <li>ادخل إلى <strong>موفر البطارية (Battery saver)</strong> واجعله <strong>بلا قيود (No restrictions)</strong> لمنع نظام أندرويد من قتل خدمة رنين المنبه الذكي.</li>
+          </ul>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

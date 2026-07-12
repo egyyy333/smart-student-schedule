@@ -366,6 +366,34 @@ public class AlarmPlugin extends Plugin {
     }
 
     @PluginMethod
+    public void checkNotificationPermission(PluginCall call) {
+        JSObject ret = new JSObject();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            int permission = androidx.core.content.ContextCompat.checkSelfPermission(
+                getContext(),
+                android.Manifest.permission.POST_NOTIFICATIONS
+            );
+            ret.put("hasPermission", permission == android.content.pm.PackageManager.PERMISSION_GRANTED);
+        } else {
+            ret.put("hasPermission", true);
+        }
+        call.resolve(ret);
+    }
+
+    @PluginMethod
+    public void requestNotificationPermission(PluginCall call) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            String[] permissions = { android.Manifest.permission.POST_NOTIFICATIONS };
+            androidx.core.app.ActivityCompat.requestPermissions(
+                getActivity(),
+                permissions,
+                1001
+            );
+        }
+        call.resolve();
+    }
+
+    @PluginMethod
     public void saveCustomRingtone(PluginCall call) {
         String base64Data = call.getString("base64Data");
         if (base64Data == null) {
@@ -391,6 +419,42 @@ public class AlarmPlugin extends Plugin {
             e.printStackTrace();
             call.reject("Failed to save custom ringtone: " + e.getMessage());
         }
+    }
+
+    @PluginMethod
+    public void triggerTestAlarm(PluginCall call) {
+        Context context = getContext();
+        AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.SECOND, 5);
+
+        Intent intent = new Intent(context, AlarmReceiver.class);
+        intent.putExtra("appointment_text", "تجربة المنبه الذكي ⏰");
+        intent.putExtra("appointment_day", "تجربة عملية");
+        intent.putExtra("appointment_time", "الآن");
+
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(
+            context,
+            99999, // Unique test request code
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            alarmManager.setExactAndAllowWhileIdle(
+                AlarmManager.RTC_WAKEUP,
+                calendar.getTimeInMillis(),
+                pendingIntent
+            );
+        } else {
+            alarmManager.setExact(
+                AlarmManager.RTC_WAKEUP,
+                calendar.getTimeInMillis(),
+                pendingIntent
+            );
+        }
+        call.resolve();
     }
 
     @PluginMethod
