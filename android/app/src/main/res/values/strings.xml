@@ -1,7 +1,0 @@
-<?xml version='1.0' encoding='utf-8'?>
-<resources>
-    <string name="app_name">جدول الطالب الذكي</string>
-    <string name="title_activity_main">جدول الطالب الذكي</string>
-    <string name="package_name">com.smartstudentschedule.app</string>
-    <string name="custom_url_scheme">com.smartstudentschedule.app</string>
-</resources>
